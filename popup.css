@@ -165,6 +165,45 @@ select {
   accent-color: #171717;
 }
 
+.range-field {
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid #ecece8;
+}
+
+.range-heading,
+.range-ends {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.range-heading {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.range-heading output {
+  color: #6f6f69;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.range-field input {
+  width: 100%;
+  margin: 10px 0 2px;
+  accent-color: #171717;
+}
+
+.range-field input:disabled {
+  opacity: 0.4;
+}
+
+.range-ends {
+  color: #92928b;
+  font-size: 10px;
+}
+
 footer {
   display: flex;
   min-height: 29px;

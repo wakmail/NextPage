@@ -9,6 +9,7 @@ const NEXT_WORDS = ["next", "newer", "more", "continue", "forward", "›", "»",
 const PREVIOUS_WORDS = ["previous", "prev", "older", "back", "‹", "«", "←"];
 
 let saveTimer;
+let scrollAnimationId = 0;
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type !== "action" || !ACTIONS.has(message.action)) return;
@@ -21,6 +22,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 window.addEventListener("scroll", schedulePositionSave, { passive: true });
 window.addEventListener("pagehide", savePosition);
+["wheel", "touchstart", "pointerdown", "keydown"].forEach(eventName => {
+  window.addEventListener(eventName, cancelScrollAnimation, { passive: true, capture: true });
+});
 
 applyPendingArrivalBehavior();
 
@@ -153,12 +157,12 @@ async function applyPendingArrivalBehavior() {
     if (!response?.behavior || response.behavior === "leave") return;
 
     if (response.behavior === "top") {
-      repeatScroll(0, 0);
+      whenPageLoaded(() => scrollToPosition(0, 0));
       return;
     }
 
     if (response.behavior === "bottom") {
-      repeatScroll(0, () => document.documentElement.scrollHeight);
+      whenPageLoaded(() => scrollToPosition(0, () => pageScroller().scrollHeight));
       return;
     }
 
@@ -168,7 +172,7 @@ async function applyPendingArrivalBehavior() {
         url: location.href
       });
       const position = saved?.position;
-      repeatScroll(position?.x ?? 0, position?.y ?? 0);
+      whenPageLoaded(() => repeatScroll(position?.x ?? 0, position?.y ?? 0));
     }
   } catch {
     // Arrival behavior is optional when the extension is reloading.
@@ -179,17 +183,99 @@ function repeatScroll(x, y) {
   [0, 120, 500].forEach(delay => {
     setTimeout(() => {
       const resolvedY = typeof y === "function" ? y() : y;
-      window.scrollTo({ left: x, top: resolvedY, behavior: "instant" });
+      const scroller = pageScroller();
+      scroller.scrollLeft = x;
+      scroller.scrollTop = resolvedY;
     }, delay);
   });
 }
 
 function scrollToPosition(x, y) {
   chrome.storage.local.get("settings").then(({ settings }) => {
-    window.scrollTo({
-      left: x,
-      top: y,
-      behavior: settings?.smoothScroll === false ? "instant" : "smooth"
-    });
+    const scroller = pageScroller();
+    const startX = scroller.scrollLeft;
+    const startY = scroller.scrollTop;
+    const targetX = Math.max(0, x);
+    const duration = Number(settings?.scrollDuration) || 1250;
+    const animationId = ++scrollAnimationId;
+
+    function resolveTargetY() {
+      const requestedY = typeof y === "function" ? y() : y;
+      const viewportHeight = scroller.clientHeight || window.innerHeight;
+      const maxY = Math.max(0, scroller.scrollHeight - viewportHeight);
+      return Math.max(0, Math.min(requestedY, maxY));
+    }
+
+    if (settings?.smoothScroll === false || duration <= 0) {
+      scroller.scrollLeft = targetX;
+      scroller.scrollTop = resolveTargetY();
+      return;
+    }
+
+    let startedAt;
+    function step(now) {
+      if (animationId !== scrollAnimationId) return;
+      if (startedAt === undefined) startedAt = now;
+
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const eased = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+      const targetY = resolveTargetY();
+
+      scroller.scrollLeft = startX + (targetX - startX) * eased;
+      scroller.scrollTop = startY + (targetY - startY) * eased;
+
+      if (progress < 1) requestAnimationFrame(step);
+      else settleScrollTarget(scroller, targetX, resolveTargetY, animationId);
+    }
+
+    requestAnimationFrame(step);
   });
+}
+
+function settleScrollTarget(scroller, targetX, resolveTargetY, animationId) {
+  [200, 700, 1500].forEach(delay => {
+    setTimeout(() => {
+      if (animationId !== scrollAnimationId) return;
+      scroller.scrollLeft = targetX;
+      scroller.scrollTop = resolveTargetY();
+    }, delay);
+  });
+}
+
+function cancelScrollAnimation() {
+  scrollAnimationId += 1;
+}
+
+function whenPageLoaded(callback) {
+  let fallbackTimer;
+  let finished = false;
+
+  function run() {
+    if (finished) return;
+    finished = true;
+    clearTimeout(fallbackTimer);
+    setTimeout(callback, 100);
+  }
+
+  if (document.readyState === "complete") {
+    run();
+    return;
+  }
+
+  window.addEventListener("load", run, { once: true });
+  fallbackTimer = setTimeout(run, 5000);
+}
+
+function pageScroller() {
+  const root = document.documentElement;
+  const body = document.body;
+
+  if (body && root && body.scrollHeight > body.clientHeight + 1 &&
+      root.scrollHeight <= root.clientHeight + 1) {
+    return body;
+  }
+
+  return document.scrollingElement || root || body;
 }

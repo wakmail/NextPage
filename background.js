@@ -1,7 +1,8 @@
 const DEFAULT_SETTINGS = {
   arrivalBehavior: "restore",
   rememberPositions: true,
-  smoothScroll: true
+  smoothScroll: true,
+  scrollDuration: 1250
 };
 
 const POSITION_LIMIT = 250;
