@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NextPage</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="mark" aria-hidden="true">N</div>
+        <div>
+          <h1>NextPage</h1>
+          <p>Move through the web with less effort.</p>
+        </div>
+      </header>
+
+      <section class="actions" aria-label="Page actions">
+        <button data-action="previous-page">
+          <span class="icon">←</span>
+          <span>Previous</span>
+        </button>
+        <button class="primary" data-action="next-page">
+          <span>Next</span>
+          <span class="icon">→</span>
+        </button>
+        <button data-action="scroll-top">
+          <span class="icon">↑</span>
+          <span>Top</span>
+        </button>
+        <button data-action="scroll-bottom">
+          <span class="icon">↓</span>
+          <span>Bottom</span>
+        </button>
+      </section>
+
+      <section class="settings" aria-labelledby="settings-title">
+        <h2 id="settings-title">After page navigation</h2>
+        <label class="field">
+          <span>Scroll position</span>
+          <select id="arrival-behavior">
+            <option value="restore">Restore saved position</option>
+            <option value="top">Go to top</option>
+            <option value="bottom">Go to bottom</option>
+            <option value="leave">Leave unchanged</option>
+          </select>
+        </label>
+
+        <label class="toggle">
+          <span>
+            <strong>Remember positions</strong>
+            <small>Save your place on recently visited pages</small>
+          </span>
+          <input id="remember-positions" type="checkbox">
+        </label>
+
+        <label class="toggle">
+          <span>
+            <strong>Smooth scrolling</strong>
+            <small>Animate top and bottom actions</small>
+          </span>
+          <input id="smooth-scroll" type="checkbox">
+        </label>
+      </section>
+
+      <footer>
+        <p id="status" role="status" aria-live="polite"></p>
+        <button id="shortcut-settings" class="text-button">Change keyboard shortcuts</button>
+      </footer>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

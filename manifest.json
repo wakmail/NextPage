@@ -1,0 +1,59 @@
+{
+  "manifest_version": 3,
+  "name": "NextPage",
+  "version": "0.1.0",
+  "description": "Navigate pages and control scrolling with simple keyboard shortcuts.",
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "NextPage",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "next-page": {
+      "suggested_key": {
+        "default": "Alt+Shift+Right"
+      },
+      "description": "Open the next page"
+    },
+    "previous-page": {
+      "suggested_key": {
+        "default": "Alt+Shift+Left"
+      },
+      "description": "Open the previous page"
+    },
+    "scroll-top": {
+      "suggested_key": {
+        "default": "Alt+Shift+Up"
+      },
+      "description": "Scroll to the top"
+    },
+    "scroll-bottom": {
+      "suggested_key": {
+        "default": "Alt+Shift+Down"
+      },
+      "description": "Scroll to the bottom"
+    }
+  }
+}
