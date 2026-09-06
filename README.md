@@ -9,7 +9,7 @@ NextPage is a Chrome extension for moving through paginated websites and control
 3. Remember your position on recently visited pages.
 4. Choose whether navigation restores your position, moves to the top, moves to the bottom, or leaves the page unchanged.
 5. Change every shortcut from the Chrome extension shortcut settings.
-6. Adjust smooth scroll animation from a quick quarter second to a gentle four seconds.
+6. Adjust smooth scroll animation from a nearly instant twentieth of a second to a gentle four seconds. New installations default to a quarter second.
 
 ## Install locally
 

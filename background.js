@@ -2,16 +2,23 @@ const DEFAULT_SETTINGS = {
   arrivalBehavior: "restore",
   rememberPositions: true,
   smoothScroll: true,
-  scrollDuration: 1250
+  scrollDuration: 250
 };
 
 const POSITION_LIMIT = 250;
 let saveQueue = Promise.resolve();
 
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(async details => {
   const current = await chrome.storage.local.get("settings");
+  const settings = { ...DEFAULT_SETTINGS, ...current.settings };
+
+  if (details.reason === "update" && details.previousVersion === "0.2.0" &&
+      current.settings?.scrollDuration === 1250) {
+    settings.scrollDuration = 250;
+  }
+
   await chrome.storage.local.set({
-    settings: { ...DEFAULT_SETTINGS, ...current.settings }
+    settings
   });
 });
 

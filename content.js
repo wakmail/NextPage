@@ -196,7 +196,7 @@ function scrollToPosition(x, y) {
     const startX = scroller.scrollLeft;
     const startY = scroller.scrollTop;
     const targetX = Math.max(0, x);
-    const duration = Number(settings?.scrollDuration) || 1250;
+    const duration = Number(settings?.scrollDuration) || 250;
     const animationId = ++scrollAnimationId;
 
     function resolveTargetY() {

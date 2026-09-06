@@ -2,7 +2,7 @@ const DEFAULT_SETTINGS = {
   arrivalBehavior: "restore",
   rememberPositions: true,
   smoothScroll: true,
-  scrollDuration: 1250
+  scrollDuration: 250
 };
 
 const arrivalBehavior = document.querySelector("#arrival-behavior");
