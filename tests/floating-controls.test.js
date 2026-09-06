@@ -46,7 +46,10 @@ test("the page bar includes dragging and direct page entry", () => {
   assert.match(controls, /host\.style\.colorScheme/);
   assert.match(controls, /light-dark\(rgba\(24,24,28,\.1\), rgba\(255,255,255,\.11\)\)/);
   assert.match(controls, /hideControlsOnScroll/);
-  assert.match(controls, /nearPageEdge\(position\)/);
+  assert.match(controls, /nearPageTop\(position\)/);
+  assert.match(controls, /atPageBottom\(position\)/);
+  assert.match(controls, /BOTTOM_REVEAL_DELAY = 350/);
+  assert.match(controls, /scheduleBottomReveal\(\)/);
   assert.match(controls, /Date\.now\(\) < navigationRevealUntil/);
   assert.match(controls, /navigationRevealUntil = Date\.now\(\) \+ NAVIGATION_REVEAL_TIME/);
   assert.match(controls, /wrap\.classList\.toggle\("auto-hidden"/);

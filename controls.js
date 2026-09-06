@@ -2,7 +2,9 @@
   const DEFAULT_POSITION = null;
   const MAX_GRID_PAGES = 10;
   const MAX_UNVERIFIED_PAGE = 1000000;
-  const EDGE_REVEAL_DISTANCE = 72;
+  const TOP_REVEAL_DISTANCE = 72;
+  const BOTTOM_REVEAL_DISTANCE = 2;
+  const BOTTOM_REVEAL_DELAY = 350;
   const NAVIGATION_REVEAL_TIME = 1800;
   const SCROLL_DIRECTION_THRESHOLD = 2;
   const host = document.createElement("div");
@@ -123,6 +125,7 @@
   let model;
   let storedPosition = DEFAULT_POSITION;
   let refreshTimer;
+  let bottomRevealTimer;
   let positionFrameId = 0;
   let controlsEnabled = false;
   let hideControlsOnScroll = false;
@@ -172,6 +175,7 @@
   function setEnabled(enabled) {
     controlsEnabled = enabled;
     if (!enabled) {
+      cancelBottomReveal();
       setAutoHidden(false);
       updateVisibility(false);
     }
@@ -181,6 +185,7 @@
   function setAutoHide(enabled) {
     hideControlsOnScroll = enabled;
     lastScrollPosition = currentScrollPosition();
+    cancelBottomReveal();
     setAutoHidden(false);
   }
 
@@ -189,11 +194,21 @@
     const movement = position - lastScrollPosition;
     lastScrollPosition = position;
 
-    if (!hideControlsOnScroll || !controlsEnabled || host.hidden) return;
-    if (!popover.hidden || dragging || nearPageEdge(position) || Date.now() < navigationRevealUntil) {
+    if (!hideControlsOnScroll || !controlsEnabled || host.hidden) {
+      cancelBottomReveal();
+      return;
+    }
+    if (!popover.hidden || dragging || nearPageTop(position) || Date.now() < navigationRevealUntil) {
+      cancelBottomReveal();
       setAutoHidden(false);
       return;
     }
+    if (atPageBottom(position)) {
+      scheduleBottomReveal();
+      return;
+    }
+
+    cancelBottomReveal();
 
     if (movement > SCROLL_DIRECTION_THRESHOLD) setAutoHidden(true);
     else if (movement < -SCROLL_DIRECTION_THRESHOLD) setAutoHidden(false);
@@ -203,10 +218,31 @@
     return document.scrollingElement?.scrollTop ?? window.scrollY ?? 0;
   }
 
-  function nearPageEdge(position) {
+  function nearPageTop(position) {
+    return position <= TOP_REVEAL_DISTANCE;
+  }
+
+  function atPageBottom(position) {
     const scroller = document.scrollingElement || document.documentElement;
     const maximum = Math.max(0, scroller.scrollHeight - (scroller.clientHeight || window.innerHeight));
-    return position <= EDGE_REVEAL_DISTANCE || maximum - position <= EDGE_REVEAL_DISTANCE;
+    return maximum - position <= BOTTOM_REVEAL_DISTANCE;
+  }
+
+  function scheduleBottomReveal() {
+    clearTimeout(bottomRevealTimer);
+    bottomRevealTimer = setTimeout(() => {
+      bottomRevealTimer = undefined;
+      const position = currentScrollPosition();
+      if (hideControlsOnScroll && controlsEnabled && !host.hidden &&
+          popover.hidden && !dragging && atPageBottom(position)) {
+        setAutoHidden(false);
+      }
+    }, BOTTOM_REVEAL_DELAY);
+  }
+
+  function cancelBottomReveal() {
+    clearTimeout(bottomRevealTimer);
+    bottomRevealTimer = undefined;
   }
 
   function setAutoHidden(hidden) {
@@ -214,6 +250,7 @@
   }
 
   function revealAfterNavigation() {
+    cancelBottomReveal();
     navigationRevealUntil = Date.now() + NAVIGATION_REVEAL_TIME;
     setAutoHidden(false);
   }
