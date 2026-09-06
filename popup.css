@@ -144,6 +144,10 @@ select {
   font-size: 13px;
 }
 
+.toggle.first-toggle {
+  margin-top: 0;
+}
+
 .toggle strong,
 .toggle small {
   display: block;
@@ -224,6 +228,33 @@ select {
 
 .range-field input:disabled {
   opacity: 0.4;
+}
+
+.position-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid #ecece8;
+  font-size: 13px;
+}
+
+.position-row strong,
+.position-row small {
+  display: block;
+}
+
+.position-row small {
+  margin-top: 2px;
+  color: #81817a;
+  font-size: 11px;
+}
+
+.position-reset {
+  padding: 5px 9px;
+  font-size: 11px;
 }
 
 .range-ends {

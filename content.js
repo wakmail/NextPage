@@ -5,9 +5,6 @@ const ACTIONS = new Set([
   "scroll-bottom"
 ]);
 
-const NEXT_WORDS = ["next", "newer", "more", "continue", "forward", "›", "»", "→"];
-const PREVIOUS_WORDS = ["previous", "prev", "older", "back", "‹", "«", "←"];
-
 let saveTimer;
 let scrollAnimationId = 0;
 
@@ -40,7 +37,7 @@ async function runAction(action) {
   }
 
   const direction = action === "next-page" ? "next" : "previous";
-  const link = findNavigationLink(direction);
+  const link = NextPageNavigation.findNavigationLink(direction);
   if (!link) {
     return {
       ok: false,
@@ -67,70 +64,10 @@ function activateNavigationTarget(element) {
   element.click();
 }
 
-function findNavigationLink(direction) {
-  const relation = direction === "next" ? "next" : "prev";
-  const direct = document.querySelector(`a[rel~="${relation}"], link[rel~="${relation}"]`);
-  if (direct?.href && isUsableLink(direct)) return direct;
-
-  const words = direction === "next" ? NEXT_WORDS : PREVIOUS_WORDS;
-  const candidates = [...document.querySelectorAll("a[href], button")]
-    .filter(isUsableLink)
-    .map(element => ({ element, score: scoreLink(element, direction, words) }))
-    .filter(candidate => candidate.score > 0)
-    .sort((left, right) => right.score - left.score);
-
-  return candidates[0]?.element ?? null;
-}
-
-function scoreLink(element, direction, words) {
-  const text = normalizedText(element.textContent);
-  const label = normalizedText(element.getAttribute("aria-label"));
-  const title = normalizedText(element.getAttribute("title"));
-  const identity = normalizedText(`${element.id} ${element.className}`);
-  const combined = `${text} ${label} ${title}`.trim();
-  let score = 0;
-
-  for (const word of words) {
-    if (combined === word) score = Math.max(score, 100);
-    else if (label === word || title === word) score = Math.max(score, 90);
-    else if (combined.startsWith(`${word} `) || combined.endsWith(` ${word}`)) score = Math.max(score, 70);
-    else if (combined.includes(word) && word.length > 3) score = Math.max(score, 45);
-  }
-
-  const identityWord = direction === "next" ? "next" : "prev";
-  if (new RegExp(`(^|\\s|_)${identityWord}($|\\s|_)`).test(identity)) score += 50;
-  if (element.closest("nav, [role='navigation'], .pagination, [class*='pagination']")) score += 20;
-  if (element.tagName === "A") score += 5;
-
-  const rect = element.getBoundingClientRect();
-  if (direction === "next" && rect.left > window.innerWidth / 2) score += 5;
-  if (direction === "previous" && rect.left < window.innerWidth / 2) score += 5;
-
-  return score;
-}
-
-function normalizedText(value) {
-  return String(value ?? "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
-}
-
-function isUsableLink(element) {
-  if (!element) return false;
-  if (element.tagName === "LINK") return Boolean(element.href);
-  if (element.matches("[disabled], [aria-disabled='true'], .disabled")) return false;
-  if (element.closest("[hidden], [aria-hidden='true']")) return false;
-
-  const style = getComputedStyle(element);
-  if (style.display === "none" || style.visibility === "hidden") return false;
-
-  if (element.tagName === "A") {
-    const href = element.getAttribute("href");
-    if (!href || href === "#" || href.startsWith("javascript:")) return false;
-  }
-
-  return true;
+async function navigateToURL(url) {
+  await savePosition();
+  await chrome.runtime.sendMessage({ type: "prepare-navigation" });
+  location.assign(url);
 }
 
 function schedulePositionSave() {
@@ -282,3 +219,8 @@ function pageScroller() {
 
   return document.scrollingElement || root || body;
 }
+
+globalThis.NextPageContent = {
+  navigateToURL,
+  runAction
+};

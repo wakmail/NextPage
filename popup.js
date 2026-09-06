@@ -2,7 +2,8 @@ const DEFAULT_SETTINGS = {
   arrivalBehavior: "restore",
   rememberPositions: true,
   smoothScroll: true,
-  scrollDuration: 250
+  scrollDuration: 250,
+  floatingControls: false
 };
 
 const arrivalBehavior = document.querySelector("#arrival-behavior");
@@ -11,6 +12,8 @@ const smoothScroll = document.querySelector("#smooth-scroll");
 const scrollDuration = document.querySelector("#scroll-duration");
 const scrollDurationValue = document.querySelector("#scroll-duration-value");
 const resetDuration = document.querySelector("#reset-duration");
+const floatingControls = document.querySelector("#floating-controls");
+const resetFloatingPosition = document.querySelector("#reset-floating-position");
 const status = document.querySelector("#status");
 
 initialize();
@@ -23,6 +26,7 @@ async function initialize() {
   rememberPositions.checked = merged.rememberPositions;
   smoothScroll.checked = merged.smoothScroll;
   scrollDuration.value = merged.scrollDuration;
+  floatingControls.checked = merged.floatingControls;
   updateDurationDisplay();
 
   document.querySelectorAll("[data-action]").forEach(button => {
@@ -38,6 +42,8 @@ async function initialize() {
   scrollDuration.addEventListener("input", updateDurationDisplay);
   scrollDuration.addEventListener("change", saveSettings);
   resetDuration.addEventListener("click", resetScrollDuration);
+  floatingControls.addEventListener("change", saveSettings);
+  resetFloatingPosition.addEventListener("click", resetControlsPosition);
 
   document.querySelector("#shortcut-settings").addEventListener("click", () => {
     chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
@@ -60,7 +66,8 @@ async function saveSettings() {
       arrivalBehavior: arrivalBehavior.value,
       rememberPositions: rememberPositions.checked,
       smoothScroll: smoothScroll.checked,
-      scrollDuration: Number(scrollDuration.value)
+      scrollDuration: Number(scrollDuration.value),
+      floatingControls: floatingControls.checked
     }
   });
   setStatus("Saved");
@@ -83,6 +90,11 @@ function resetScrollDuration() {
   scrollDuration.value = DEFAULT_SETTINGS.scrollDuration;
   updateDurationDisplay();
   saveSettings();
+}
+
+async function resetControlsPosition() {
+  await chrome.storage.local.remove("floatingPosition");
+  setStatus("Position reset");
 }
 
 function setStatus(message, isError = false) {
