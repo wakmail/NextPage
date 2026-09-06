@@ -93,3 +93,32 @@ test("the visible page range sets the verified maximum", () => {
   const model = getPageModel(root, "https://www.google.com/search?q=nextpage");
   assert.equal(model.maximumPage, 99);
 });
+
+test("Google offset links are detected without visible text", () => {
+  const next = fakeLink("", "https://www.google.com/search?q=nextpage&start=10");
+  assert.equal(findNavigationLink("next", rootWithCandidates([next])), next);
+});
+
+test("Google related searches are not mistaken for pages", () => {
+  const related = fakeLink("More results", "https://www.google.com/search?q=different&start=10");
+  assert.equal(findNavigationLink("next", rootWithCandidates([related])), null);
+});
+
+test("Google offset links populate the page model", () => {
+  const next = fakeLink("", "https://www.google.com/search?q=nextpage&start=10");
+  const root = {
+    querySelector: () => null,
+    querySelectorAll(selector) {
+      return selector === "a[href]" ? [next] : [];
+    }
+  };
+  const model = getPageModel(root, "https://www.google.com/search?q=nextpage");
+  assert.equal(model.currentPage, 1);
+  assert.deepEqual([...model.availablePages], [2]);
+  assert.equal(model.maximumPage, 2);
+});
+
+test("Google More results buttons remain usable", () => {
+  const button = fakeLink("More results", "", "BUTTON");
+  assert.equal(findNavigationLink("next", rootWithCandidates([button])), button);
+});

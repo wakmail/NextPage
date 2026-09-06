@@ -39,7 +39,10 @@
         isSameSiteURL(element.href) && !sameDocumentURL(element.href));
     if (direct) return direct;
 
-    const candidates = [...root.querySelectorAll("a[href], button")]
+    const googleLink = findGoogleNavigationLink(direction, root);
+    if (googleLink) return googleLink;
+
+    const candidates = [...root.querySelectorAll("a[href], button, [role='button']")]
       .filter(isUsableLink)
       .map(element => ({ element, score: scoreLink(element, direction) }))
       .filter(candidate => candidate.score >= MINIMUM_SCORE)
@@ -60,8 +63,11 @@
     const combined = `${text} ${label} ${title}`.trim();
     const pagePhrase = direction === "next" ? /\bnext\s+page\b/ : /\b(previous|prev)\s+page\b/;
     const inPagination = Boolean(element.closest(PAGINATION_SELECTOR));
+    const googleControl = isGoogleControl(direction, [text, label, title], identity, element);
+    const buttonLike = element.tagName === "BUTTON" || element.getAttribute("role") === "button";
     let score = 0;
 
+    if (googleControl) score = 150;
     if (pagePhrase.test(combined)) score = 125;
     for (const word of WORDS[direction]) {
       if (combined === word) score = Math.max(score, 100);
@@ -76,7 +82,7 @@
     if (inPagination) score += 25;
     if (element.tagName === "A") score += 5;
     if (element.closest(EXCLUDED_SELECTOR)) score -= 80;
-    if (element.tagName === "BUTTON" && !inPagination && !pagePhrase.test(combined)) return 0;
+    if (buttonLike && !inPagination && !pagePhrase.test(combined) && !googleControl) return 0;
 
     return score;
   }
@@ -95,6 +101,8 @@
       const page = pageNumberFromText(element.textContent) || currentPageFromURL(element.href, true);
       if (page) pageLinks.set(page, element);
     }
+
+    addGooglePageLinks(pageLinks, root, currentHref);
 
     let currentPage = currentPageFromDocument(root);
     if (!currentPage) currentPage = currentPageFromURL(currentHref, pageLinks.size > 0);
@@ -244,6 +252,76 @@
       }
     }
     return null;
+  }
+
+  function findGoogleNavigationLink(direction, root) {
+    let currentURL;
+    try {
+      currentURL = new URL(location.href);
+    } catch {
+      return null;
+    }
+    if (!isGoogleSearch(currentURL)) return null;
+
+    const currentPage = currentPageFromURL(currentURL.href) ?? 1;
+    const candidates = [...root.querySelectorAll("a[href]")]
+      .filter(isUsableLink)
+      .map(element => ({ element, page: googlePageFromLink(element.href, currentURL) }))
+      .filter(candidate => candidate.page &&
+        (direction === "next" ? candidate.page > currentPage : candidate.page < currentPage))
+      .sort((left, right) => Math.abs(left.page - currentPage) - Math.abs(right.page - currentPage));
+
+    return candidates[0]?.element ?? null;
+  }
+
+  function addGooglePageLinks(pageLinks, root, currentHref) {
+    let currentURL;
+    try {
+      currentURL = new URL(currentHref);
+    } catch {
+      return;
+    }
+    if (!isGoogleSearch(currentURL)) return;
+
+    for (const element of root.querySelectorAll("a[href]")) {
+      const page = googlePageFromLink(element.href, currentURL);
+      if (page) pageLinks.set(page, element);
+    }
+  }
+
+  function googlePageFromLink(href, currentURL) {
+    try {
+      const candidate = new URL(href, currentURL);
+      if (!isGoogleSearch(candidate) || candidate.hostname !== currentURL.hostname) return null;
+      if (candidate.searchParams.get("q") !== currentURL.searchParams.get("q")) return null;
+      if (!candidate.searchParams.has("start") && !candidate.searchParams.has("page")) return null;
+      return currentPageFromURL(candidate.href, true);
+    } catch {
+      return null;
+    }
+  }
+
+  function isGoogleControl(direction, labels, identity, element) {
+    let currentURL;
+    try {
+      currentURL = new URL(location.href);
+    } catch {
+      return false;
+    }
+    if (!isGoogleSearch(currentURL)) return false;
+    if (element.tagName === "A") {
+      const page = googlePageFromLink(element.href, currentURL);
+      const currentPage = currentPageFromURL(currentURL.href) ?? 1;
+      if (!page || (direction === "next" ? page <= currentPage : page >= currentPage)) return false;
+    }
+
+    const compactIdentity = identity.replace(/[\s_-]/g, "");
+    if (direction === "next") {
+      return labels.includes("more results") || compactIdentity.includes("pnnext") ||
+        compactIdentity.includes("nextpage") || compactIdentity.includes("moreresults");
+    }
+    return compactIdentity.includes("pnprev") || compactIdentity.includes("previouspage") ||
+      compactIdentity.includes("prevpage");
   }
 
   function pageNumberFromText(value) {
