@@ -23,6 +23,8 @@ test("the popup offers visibility and position controls", () => {
   assert.match(popup, /id="controls-theme"/);
   assert.match(popup, /id="remember-setting"/);
   assert.match(popup, /id="duration-setting"/);
+  assert.match(popup, /id="popup-theme"/);
+  assert.match(popup, /id="arrival-description"/);
 });
 
 test("the page bar includes dragging and direct page entry", () => {

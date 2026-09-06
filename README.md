@@ -19,6 +19,8 @@ NextPage is a Chrome extension for moving through paginated websites and control
 13. Match the system appearance automatically or force a light or dark floating bar.
 14. Dim settings that do not apply to the selected behavior.
 15. Apply navigation arrival positions immediately while keeping smooth animation for manual Top and Bottom actions.
+16. Choose an automatic, light, or dark appearance for the extension popup.
+17. Follow page layout changes while applying an arrival position, then stop once the page settles or the user interacts.
 
 ## Install locally
 

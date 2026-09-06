@@ -7,6 +7,7 @@ const ACTIONS = new Set([
 
 let saveTimer;
 let scrollAnimationId = 0;
+let stopArrivalCorrection;
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.type !== "action" || !ACTIONS.has(message.action)) return;
@@ -94,12 +95,12 @@ async function applyPendingArrivalBehavior() {
     if (!response?.behavior || response.behavior === "leave") return;
 
     if (response.behavior === "top") {
-      repeatScroll(0, 0);
+      stabilizeArrivalPosition(0, 0);
       return;
     }
 
     if (response.behavior === "bottom") {
-      repeatScroll(0, () => pageScroller().scrollHeight);
+      stabilizeArrivalPosition(0, () => pageScroller().scrollHeight);
       return;
     }
 
@@ -109,30 +110,63 @@ async function applyPendingArrivalBehavior() {
         url: location.href
       });
       const position = saved?.position;
-      repeatScroll(position?.x ?? 0, position?.y ?? 0);
+      stabilizeArrivalPosition(position?.x ?? 0, position?.y ?? 0);
     }
   } catch {
     // Arrival behavior is optional when the extension is reloading.
   }
 }
 
-function repeatScroll(x, y) {
-  const repeatId = ++scrollAnimationId;
+function stabilizeArrivalPosition(x, y) {
+  cancelScrollAnimation();
+  const correctionId = scrollAnimationId;
+  let loaded = document.readyState === "complete";
+  let observer;
+  let quietTimer;
+  let maximumTimer;
 
   function apply() {
-    if (repeatId !== scrollAnimationId) return;
+    if (correctionId !== scrollAnimationId) {
+      stop();
+      return;
+    }
     const resolvedY = typeof y === "function" ? y() : y;
     const scroller = pageScroller();
     scroller.scrollLeft = x;
     scroller.scrollTop = resolvedY;
+
+    if (loaded) {
+      clearTimeout(quietTimer);
+      quietTimer = setTimeout(stop, 1200);
+    }
   }
 
+  function pageLoaded() {
+    loaded = true;
+    apply();
+  }
+
+  function stop() {
+    observer?.disconnect();
+    clearTimeout(quietTimer);
+    clearTimeout(maximumTimer);
+    window.removeEventListener?.("load", pageLoaded);
+    if (stopArrivalCorrection === stop) stopArrivalCorrection = undefined;
+  }
+
+  stopArrivalCorrection = stop;
   apply();
-  [120, 500, 1500].forEach(delay => {
-    setTimeout(() => {
-      apply();
-    }, delay);
-  });
+
+  if (typeof ResizeObserver === "function") {
+    observer = new ResizeObserver(apply);
+    observer.observe(document.documentElement);
+    if (document.body && document.body !== document.documentElement) observer.observe(document.body);
+  } else {
+    [120, 500, 1500].forEach(delay => setTimeout(apply, delay));
+  }
+
+  if (!loaded) window.addEventListener("load", pageLoaded, { once: true });
+  maximumTimer = setTimeout(stop, 8000);
 }
 
 function scrollToPosition(x, y) {
@@ -194,6 +228,8 @@ function settleScrollTarget(scroller, targetX, resolveTargetY, animationId) {
 
 function cancelScrollAnimation() {
   scrollAnimationId += 1;
+  stopArrivalCorrection?.();
+  stopArrivalCorrection = undefined;
 }
 
 function pageScroller() {

@@ -4,10 +4,12 @@ const DEFAULT_SETTINGS = {
   smoothScroll: true,
   scrollDuration: 250,
   floatingControls: false,
-  controlsTheme: "auto"
+  controlsTheme: "auto",
+  popupTheme: "auto"
 };
 
 const arrivalBehavior = document.querySelector("#arrival-behavior");
+const arrivalDescription = document.querySelector("#arrival-description");
 const rememberPositions = document.querySelector("#remember-positions");
 const rememberSetting = document.querySelector("#remember-setting");
 const smoothScroll = document.querySelector("#smooth-scroll");
@@ -20,6 +22,7 @@ const controlsTheme = document.querySelector("#controls-theme");
 const controlsThemeSetting = document.querySelector("#controls-theme-setting");
 const resetFloatingPosition = document.querySelector("#reset-floating-position");
 const controlsPositionSetting = document.querySelector("#controls-position-setting");
+const popupTheme = document.querySelector("#popup-theme");
 const status = document.querySelector("#status");
 
 initialize();
@@ -34,6 +37,9 @@ async function initialize() {
   scrollDuration.value = merged.scrollDuration;
   floatingControls.checked = merged.floatingControls;
   controlsTheme.value = merged.controlsTheme;
+  popupTheme.value = merged.popupTheme;
+  applyPopupTheme();
+  updateArrivalDescription();
   updateDurationDisplay();
   updateRelevance();
 
@@ -42,6 +48,7 @@ async function initialize() {
   });
 
   arrivalBehavior.addEventListener("change", () => {
+    updateArrivalDescription();
     updateRelevance();
     saveSettings();
   });
@@ -58,6 +65,10 @@ async function initialize() {
     saveSettings();
   });
   controlsTheme.addEventListener("change", saveSettings);
+  popupTheme.addEventListener("change", () => {
+    applyPopupTheme();
+    saveSettings();
+  });
   resetFloatingPosition.addEventListener("click", resetControlsPosition);
 
   document.querySelector("#shortcut-settings").addEventListener("click", () => {
@@ -83,7 +94,8 @@ async function saveSettings() {
       smoothScroll: smoothScroll.checked,
       scrollDuration: Number(scrollDuration.value),
       floatingControls: floatingControls.checked,
-      controlsTheme: controlsTheme.value
+      controlsTheme: controlsTheme.value,
+      popupTheme: popupTheme.value
     }
   });
   setStatus("Saved");
@@ -113,6 +125,21 @@ function updateRelevance() {
   resetFloatingPosition.disabled = !showingBar;
   controlsThemeSetting.classList.toggle("is-disabled", !showingBar);
   controlsPositionSetting.classList.toggle("is-disabled", !showingBar);
+}
+
+function updateArrivalDescription() {
+  const descriptions = {
+    leave: "Let the website choose where the page begins",
+    restore: "Return to your most recently saved position",
+    top: "Place the page at the top as it loads",
+    bottom: "Follow the bottom while the page finishes loading"
+  };
+  arrivalDescription.textContent = descriptions[arrivalBehavior.value] ?? "";
+}
+
+function applyPopupTheme() {
+  const selected = ["light", "dark"].includes(popupTheme.value) ? popupTheme.value : "auto";
+  document.documentElement.dataset.theme = selected;
 }
 
 function resetScrollDuration() {

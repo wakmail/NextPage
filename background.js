@@ -4,7 +4,8 @@ const DEFAULT_SETTINGS = {
   smoothScroll: true,
   scrollDuration: 250,
   floatingControls: false,
-  controlsTheme: "auto"
+  controlsTheme: "auto",
+  popupTheme: "auto"
 };
 
 const POSITION_LIMIT = 250;

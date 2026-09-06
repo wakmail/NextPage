@@ -40,11 +40,12 @@
         <label class="field">
           <span>Scroll position</span>
           <select id="arrival-behavior">
+            <option value="leave">Do not modify</option>
             <option value="restore">Restore saved position</option>
             <option value="top">Go to top</option>
             <option value="bottom">Go to bottom</option>
-            <option value="leave">Leave unchanged</option>
           </select>
+          <small class="field-help" id="arrival-description"></small>
         </label>
 
         <label class="toggle" id="remember-setting">
@@ -77,6 +78,18 @@
             <span>Slow</span>
           </div>
         </div>
+      </section>
+
+      <section class="settings" aria-labelledby="appearance-title">
+        <h2 id="appearance-title">Appearance</h2>
+        <label class="field">
+          <span>Extension appearance</span>
+          <select id="popup-theme">
+            <option value="auto">Auto</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+          </select>
+        </label>
       </section>
 
       <section class="settings" aria-labelledby="controls-title">
