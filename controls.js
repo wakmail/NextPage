@@ -60,7 +60,7 @@
         width: 246px;
         padding: 12px;
         border: 1px solid light-dark(rgba(255,255,255,.46), rgba(255,255,255,.12));
-        border-radius: 20px;
+        border-radius: 8px;
         background: light-dark(rgba(242,242,246,.58), rgba(29,29,33,.55));
         box-shadow: 0 16px 42px rgba(0,0,0,.2);
         backdrop-filter: blur(22px) saturate(165%);
@@ -70,7 +70,7 @@
       .wrap.below .popover { top: calc(100% + 10px); bottom: auto; }
       .popover[hidden] { display: none; }
       .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
-      .grid button { min-width: 0; height: 34px; background: light-dark(rgba(255,255,255,.48), rgba(255,255,255,.07)); }
+      .grid button { min-width: 0; height: 34px; border-radius: 4px; background: light-dark(rgba(255,255,255,.48), rgba(255,255,255,.07)); }
       .grid button.current { color: white; background: #4169e1; }
       form { display: grid; grid-template-columns: 1fr auto; gap: 7px; margin-top: 9px; }
       input {
@@ -78,11 +78,11 @@
         height: 36px;
         padding: 0 11px;
         border: 1px solid light-dark(rgba(0,0,0,.14), rgba(255,255,255,.15));
-        border-radius: 999px;
+        border-radius: 4px;
         color: inherit;
         background: light-dark(rgba(255,255,255,.65), rgba(255,255,255,.07));
       }
-      form button { min-width: 48px; height: 36px; padding: 0 13px; color: white; background: #4169e1; }
+      form button { min-width: 48px; height: 36px; padding: 0 13px; border-radius: 4px; color: white; background: #4169e1; }
       .message { min-height: 14px; margin: 8px 4px 0; color: light-dark(#626268, #b7b7be); font-size: 11px; font-weight: 500; }
     </style>
     <div class="wrap">
@@ -117,9 +117,10 @@
   let model;
   let storedPosition = DEFAULT_POSITION;
   let refreshTimer;
+  let positionFrameId = 0;
   let controlsEnabled = false;
 
-  initialize();
+  initialize().catch(() => host.remove());
 
   async function initialize() {
     document.documentElement.append(host);
@@ -330,18 +331,25 @@
       x: Math.max(0, Math.min(1, rect.left / horizontalSpace)),
       y: Math.max(0, Math.min(1, rect.top / verticalSpace))
     };
-    chrome.storage.local.set({ floatingPosition: storedPosition });
+    chrome.storage.local.set({ floatingPosition: storedPosition }).catch(() => {});
   }
 
   async function resetPosition(event) {
     event?.preventDefault();
     storedPosition = DEFAULT_POSITION;
-    await chrome.storage.local.remove("floatingPosition");
     applyStoredPosition();
+    try {
+      await chrome.storage.local.remove("floatingPosition");
+    } catch {
+      // A reloaded extension cannot update storage from an older page context.
+    }
   }
 
   function applyStoredPosition() {
-    if (!storedPosition || !Number.isFinite(storedPosition.x) || !Number.isFinite(storedPosition.y)) {
+    const position = storedPosition;
+    const frameId = ++positionFrameId;
+
+    if (!position || !Number.isFinite(position.x) || !Number.isFinite(position.y)) {
       host.style.left = "50%";
       host.style.top = "auto";
       host.style.bottom = "24px";
@@ -350,8 +358,9 @@
     }
 
     requestAnimationFrame(() => {
-      const left = storedPosition.x * Math.max(0, window.innerWidth - host.offsetWidth);
-      const top = storedPosition.y * Math.max(0, window.innerHeight - host.offsetHeight);
+      if (frameId !== positionFrameId) return;
+      const left = position.x * Math.max(0, window.innerWidth - host.offsetWidth);
+      const top = position.y * Math.max(0, window.innerHeight - host.offsetHeight);
       placeAt(left, top);
     });
   }

@@ -7,6 +7,7 @@ const manifest = JSON.parse(fs.readFileSync(
   "utf8"
 ));
 const popup = fs.readFileSync(new URL("../popup.html", `file://${__filename}`), "utf8");
+const popupStyles = fs.readFileSync(new URL("../popup.css", `file://${__filename}`), "utf8");
 const controls = fs.readFileSync(new URL("../controls.js", `file://${__filename}`), "utf8");
 
 test("navigation loads before the page controls", () => {
@@ -25,6 +26,8 @@ test("the popup offers visibility and position controls", () => {
   assert.match(popup, /id="duration-setting"/);
   assert.match(popup, /id="popup-theme"/);
   assert.match(popup, /id="arrival-description"/);
+  assert.match(popupStyles, /html \{[\s\S]*height: 580px;[\s\S]*overflow: hidden;/);
+  assert.match(popupStyles, /body \{[\s\S]*height: 580px;[\s\S]*overflow-y: auto;/);
 });
 
 test("the page bar includes dragging and direct page entry", () => {
@@ -40,4 +43,12 @@ test("the page bar includes dragging and direct page entry", () => {
   assert.match(controls, /MAX_GRID_PAGES = 10/);
   assert.match(controls, /grid-template-columns: repeat\(5, 1fr\)/);
   assert.match(controls, /host\.style\.colorScheme/);
+});
+
+test("saved position frames use a stable position snapshot", () => {
+  assert.match(controls, /const position = storedPosition;/);
+  assert.match(controls, /const frameId = \+\+positionFrameId;/);
+  assert.match(controls, /if \(frameId !== positionFrameId\) return;/);
+  assert.match(controls, /const left = position\.x/);
+  assert.doesNotMatch(controls, /const left = storedPosition\.x/);
 });

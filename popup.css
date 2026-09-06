@@ -20,6 +20,12 @@
   --error: #a7352a;
 }
 
+html {
+  width: 340px;
+  height: 580px;
+  overflow: hidden;
+}
+
 :root[data-theme="dark"] {
   color-scheme: dark;
   --page-background: #171719;
@@ -68,7 +74,9 @@
 
 body {
   width: 340px;
+  height: 580px;
   margin: 0;
+  overflow-y: auto;
   color: var(--text);
   background: var(--page-background);
 }
