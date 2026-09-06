@@ -3,7 +3,8 @@ const DEFAULT_SETTINGS = {
   rememberPositions: true,
   smoothScroll: true,
   scrollDuration: 250,
-  floatingControls: false
+  floatingControls: false,
+  controlsTheme: "auto"
 };
 
 const arrivalBehavior = document.querySelector("#arrival-behavior");
@@ -13,6 +14,7 @@ const scrollDuration = document.querySelector("#scroll-duration");
 const scrollDurationValue = document.querySelector("#scroll-duration-value");
 const resetDuration = document.querySelector("#reset-duration");
 const floatingControls = document.querySelector("#floating-controls");
+const controlsTheme = document.querySelector("#controls-theme");
 const resetFloatingPosition = document.querySelector("#reset-floating-position");
 const status = document.querySelector("#status");
 
@@ -27,6 +29,7 @@ async function initialize() {
   smoothScroll.checked = merged.smoothScroll;
   scrollDuration.value = merged.scrollDuration;
   floatingControls.checked = merged.floatingControls;
+  controlsTheme.value = merged.controlsTheme;
   updateDurationDisplay();
 
   document.querySelectorAll("[data-action]").forEach(button => {
@@ -43,6 +46,7 @@ async function initialize() {
   scrollDuration.addEventListener("change", saveSettings);
   resetDuration.addEventListener("click", resetScrollDuration);
   floatingControls.addEventListener("change", saveSettings);
+  controlsTheme.addEventListener("change", saveSettings);
   resetFloatingPosition.addEventListener("click", resetControlsPosition);
 
   document.querySelector("#shortcut-settings").addEventListener("click", () => {
@@ -67,7 +71,8 @@ async function saveSettings() {
       rememberPositions: rememberPositions.checked,
       smoothScroll: smoothScroll.checked,
       scrollDuration: Number(scrollDuration.value),
-      floatingControls: floatingControls.checked
+      floatingControls: floatingControls.checked,
+      controlsTheme: controlsTheme.value
     }
   });
   setStatus("Saved");

@@ -16,6 +16,7 @@ NextPage is a Chrome extension for moving through paginated websites and control
 10. Double click the bar grip to reset its position without opening the popup.
 11. Hide the bar when a website has no reliable page controls.
 12. Clamp typed jumps only when the website declares a final page. Otherwise, allow reliable URL patterns within a generous safety limit.
+13. Match the system appearance automatically or force a light or dark floating bar.
 
 ## Install locally
 

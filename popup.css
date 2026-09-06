@@ -148,6 +148,10 @@ select {
   margin-top: 0;
 }
 
+.controls-theme-field {
+  margin-top: 14px;
+}
+
 .toggle strong,
 .toggle small {
   display: block;

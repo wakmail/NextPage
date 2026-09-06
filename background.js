@@ -3,7 +3,8 @@ const DEFAULT_SETTINGS = {
   rememberPositions: true,
   smoothScroll: true,
   scrollDuration: 250,
-  floatingControls: false
+  floatingControls: false,
+  controlsTheme: "auto"
 };
 
 const POSITION_LIMIT = 250;

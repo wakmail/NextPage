@@ -125,6 +125,7 @@
     document.documentElement.append(host);
     const stored = await chrome.storage.local.get(["settings", "floatingPosition"]);
     storedPosition = stored.floatingPosition ?? DEFAULT_POSITION;
+    applyTheme(stored.settings?.controlsTheme);
     setEnabled(Boolean(stored.settings?.floatingControls));
     refresh();
 
@@ -138,7 +139,10 @@
     window.addEventListener("resize", applyStoredPosition, { passive: true });
 
     chrome.storage.onChanged.addListener(changes => {
-      if (changes.settings) setEnabled(Boolean(changes.settings.newValue?.floatingControls));
+      if (changes.settings) {
+        setEnabled(Boolean(changes.settings.newValue?.floatingControls));
+        applyTheme(changes.settings.newValue?.controlsTheme);
+      }
       if (changes.floatingPosition) {
         storedPosition = changes.floatingPosition.newValue ?? DEFAULT_POSITION;
         if (!host.hidden) applyStoredPosition();
@@ -155,6 +159,11 @@
     controlsEnabled = enabled;
     if (!enabled) updateVisibility(false);
     else scheduleRefresh();
+  }
+
+  function applyTheme(theme) {
+    const selected = ["light", "dark"].includes(theme) ? theme : "auto";
+    host.style.colorScheme = selected === "auto" ? "light dark" : selected;
   }
 
   function updateVisibility(hasPages) {

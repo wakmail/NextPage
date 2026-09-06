@@ -20,6 +20,7 @@ test("navigation loads before the page controls", () => {
 test("the popup offers visibility and position controls", () => {
   assert.match(popup, /id="floating-controls"/);
   assert.match(popup, /id="reset-floating-position"/);
+  assert.match(popup, /id="controls-theme"/);
 });
 
 test("the page bar includes dragging and direct page entry", () => {
@@ -34,4 +35,5 @@ test("the page bar includes dragging and direct page entry", () => {
   assert.match(controls, /remove\("floatingPosition"\)/);
   assert.match(controls, /MAX_GRID_PAGES = 10/);
   assert.match(controls, /grid-template-columns: repeat\(5, 1fr\)/);
+  assert.match(controls, /host\.style\.colorScheme/);
 });
