@@ -23,6 +23,20 @@ NextPage is a Chrome extension for moving through paginated websites and control
 17. Follow page layout changes while applying an arrival position, then stop once the page settles or the user interacts.
 18. Optionally hide the floating bar while scrolling down and choose whether it returns after pausing at the page bottom.
 
+## Resources
+
+[Releases](https://github.com/wakmail/NextPage/releases) provide packaged versions of NextPage.
+
+[Issues](https://github.com/wakmail/NextPage/issues) are the place for bugs and feature requests.
+
+## Contributing
+
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before starting a change.
+
+## License
+
+NextPage is available under the [MIT License](LICENSE).
+
 ## Install locally
 
 1. Open `chrome://extensions` in Chrome.
