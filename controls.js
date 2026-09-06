@@ -2,6 +2,9 @@
   const DEFAULT_POSITION = null;
   const MAX_GRID_PAGES = 10;
   const MAX_UNVERIFIED_PAGE = 1000000;
+  const EDGE_REVEAL_DISTANCE = 72;
+  const NAVIGATION_REVEAL_TIME = 1800;
+  const SCROLL_DIRECTION_THRESHOLD = 2;
   const host = document.createElement("div");
   host.id = "nextpage-floating-controls";
   host.hidden = true;
@@ -16,14 +19,16 @@
         position: relative;
         color: light-dark(#171719, #f7f7fa);
         font: 600 13px/1.2 Inter, ui-sans-serif, system-ui, sans-serif;
+        transition: opacity 150ms ease, transform 150ms ease;
         user-select: none;
       }
+      .wrap.auto-hidden { opacity: 0; pointer-events: none; transform: translateY(9px); }
       .pill {
         display: flex;
         align-items: center;
         gap: 2px;
         padding: 5px;
-        border: 1px solid light-dark(rgba(24,24,28,.18), rgba(255,255,255,.11));
+        border: 1px solid light-dark(rgba(24,24,28,.1), rgba(255,255,255,.11));
         border-radius: 999px;
         background: light-dark(rgba(240,240,244,.38), rgba(30,30,34,.4));
         box-shadow: 0 12px 34px rgba(0,0,0,.16);
@@ -59,7 +64,7 @@
         bottom: calc(100% + 10px);
         width: 246px;
         padding: 12px;
-        border: 1px solid light-dark(rgba(24,24,28,.16), rgba(255,255,255,.12));
+        border: 1px solid light-dark(rgba(24,24,28,.09), rgba(255,255,255,.12));
         border-radius: 8px;
         background: light-dark(rgba(242,242,246,.58), rgba(29,29,33,.55));
         box-shadow: 0 16px 42px rgba(0,0,0,.2);
@@ -84,6 +89,7 @@
       }
       form button { min-width: 48px; height: 36px; padding: 0 13px; border-radius: 4px; color: white; background: #4169e1; }
       .message { min-height: 14px; margin: 8px 4px 0; color: light-dark(#626268, #b7b7be); font-size: 11px; font-weight: 500; }
+      @media (prefers-reduced-motion: reduce) { .wrap { transition: none; } }
     </style>
     <div class="wrap">
       <div class="popover" id="page-popover" hidden>
@@ -119,6 +125,10 @@
   let refreshTimer;
   let positionFrameId = 0;
   let controlsEnabled = false;
+  let hideControlsOnScroll = false;
+  let dragging = false;
+  let lastScrollPosition = currentScrollPosition();
+  let navigationRevealUntil = Date.now() + NAVIGATION_REVEAL_TIME;
 
   initialize().catch(() => host.remove());
 
@@ -127,6 +137,7 @@
     const stored = await chrome.storage.local.get(["settings", "floatingPosition"]);
     storedPosition = stored.floatingPosition ?? DEFAULT_POSITION;
     applyTheme(stored.settings?.controlsTheme);
+    setAutoHide(Boolean(stored.settings?.hideControlsOnScroll));
     setEnabled(Boolean(stored.settings?.floatingControls));
     refresh();
 
@@ -138,10 +149,12 @@
     moveButton.addEventListener("dblclick", resetPosition);
     document.addEventListener("pointerdown", closeFromPageClick, true);
     window.addEventListener("resize", applyStoredPosition, { passive: true });
+    window.addEventListener("scroll", handlePageScroll, { passive: true });
 
     chrome.storage.onChanged.addListener(changes => {
       if (changes.settings) {
         setEnabled(Boolean(changes.settings.newValue?.floatingControls));
+        setAutoHide(Boolean(changes.settings.newValue?.hideControlsOnScroll));
         applyTheme(changes.settings.newValue?.controlsTheme);
       }
       if (changes.floatingPosition) {
@@ -158,8 +171,51 @@
 
   function setEnabled(enabled) {
     controlsEnabled = enabled;
-    if (!enabled) updateVisibility(false);
+    if (!enabled) {
+      setAutoHidden(false);
+      updateVisibility(false);
+    }
     else scheduleRefresh();
+  }
+
+  function setAutoHide(enabled) {
+    hideControlsOnScroll = enabled;
+    lastScrollPosition = currentScrollPosition();
+    setAutoHidden(false);
+  }
+
+  function handlePageScroll() {
+    const position = currentScrollPosition();
+    const movement = position - lastScrollPosition;
+    lastScrollPosition = position;
+
+    if (!hideControlsOnScroll || !controlsEnabled || host.hidden) return;
+    if (!popover.hidden || dragging || nearPageEdge(position) || Date.now() < navigationRevealUntil) {
+      setAutoHidden(false);
+      return;
+    }
+
+    if (movement > SCROLL_DIRECTION_THRESHOLD) setAutoHidden(true);
+    else if (movement < -SCROLL_DIRECTION_THRESHOLD) setAutoHidden(false);
+  }
+
+  function currentScrollPosition() {
+    return document.scrollingElement?.scrollTop ?? window.scrollY ?? 0;
+  }
+
+  function nearPageEdge(position) {
+    const scroller = document.scrollingElement || document.documentElement;
+    const maximum = Math.max(0, scroller.scrollHeight - (scroller.clientHeight || window.innerHeight));
+    return position <= EDGE_REVEAL_DISTANCE || maximum - position <= EDGE_REVEAL_DISTANCE;
+  }
+
+  function setAutoHidden(hidden) {
+    wrap.classList.toggle("auto-hidden", Boolean(hidden));
+  }
+
+  function revealAfterNavigation() {
+    navigationRevealUntil = Date.now() + NAVIGATION_REVEAL_TIME;
+    setAutoHidden(false);
   }
 
   function applyTheme(theme) {
@@ -194,6 +250,7 @@
   }
 
   async function runDirection(action) {
+    revealAfterNavigation();
     closePopover();
     const result = await NextPageContent.runAction(action);
     if (!result.ok) showMessage(result.message);
@@ -201,6 +258,7 @@
 
   function togglePopover() {
     if (popover.hidden) {
+      setAutoHidden(false);
       refresh();
       popover.hidden = false;
       pageButton.setAttribute("aria-expanded", "true");
@@ -277,6 +335,7 @@
       showMessage("This page cannot be determined safely");
       return;
     }
+    revealAfterNavigation();
     await NextPageContent.navigateToURL(url);
   }
 
@@ -287,6 +346,8 @@
 
   function startDrag(event) {
     event.preventDefault();
+    dragging = true;
+    setAutoHidden(false);
     closePopover();
     const rect = host.getBoundingClientRect();
     const origin = { x: event.clientX, y: event.clientY, left: rect.left, top: rect.top };
@@ -300,6 +361,7 @@
     }
 
     function finish(finishEvent) {
+      dragging = false;
       moveButton.releasePointerCapture(finishEvent.pointerId);
       moveButton.removeEventListener("pointermove", move);
       moveButton.removeEventListener("pointerup", finish);

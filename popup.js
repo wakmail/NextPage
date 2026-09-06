@@ -4,6 +4,7 @@ const DEFAULT_SETTINGS = {
   smoothScroll: true,
   scrollDuration: 250,
   floatingControls: false,
+  hideControlsOnScroll: false,
   controlsTheme: "auto",
   popupTheme: "auto"
 };
@@ -18,6 +19,8 @@ const scrollDurationValue = document.querySelector("#scroll-duration-value");
 const resetDuration = document.querySelector("#reset-duration");
 const durationSetting = document.querySelector("#duration-setting");
 const floatingControls = document.querySelector("#floating-controls");
+const hideControlsOnScroll = document.querySelector("#hide-controls-on-scroll");
+const autoHideSetting = document.querySelector("#auto-hide-setting");
 const controlsTheme = document.querySelector("#controls-theme");
 const controlsThemeSetting = document.querySelector("#controls-theme-setting");
 const resetFloatingPosition = document.querySelector("#reset-floating-position");
@@ -36,6 +39,7 @@ async function initialize() {
   smoothScroll.checked = merged.smoothScroll;
   scrollDuration.value = merged.scrollDuration;
   floatingControls.checked = merged.floatingControls;
+  hideControlsOnScroll.checked = merged.hideControlsOnScroll;
   controlsTheme.value = merged.controlsTheme;
   popupTheme.value = merged.popupTheme;
   applyPopupTheme();
@@ -64,6 +68,7 @@ async function initialize() {
     updateRelevance();
     saveSettings();
   });
+  hideControlsOnScroll.addEventListener("change", saveSettings);
   controlsTheme.addEventListener("change", saveSettings);
   popupTheme.addEventListener("change", () => {
     applyPopupTheme();
@@ -94,6 +99,7 @@ async function saveSettings() {
       smoothScroll: smoothScroll.checked,
       scrollDuration: Number(scrollDuration.value),
       floatingControls: floatingControls.checked,
+      hideControlsOnScroll: hideControlsOnScroll.checked,
       controlsTheme: controlsTheme.value,
       popupTheme: popupTheme.value
     }
@@ -121,8 +127,10 @@ function updateRelevance() {
   rememberSetting.classList.toggle("is-disabled", !restoringPosition);
 
   const showingBar = floatingControls.checked;
+  hideControlsOnScroll.disabled = !showingBar;
   controlsTheme.disabled = !showingBar;
   resetFloatingPosition.disabled = !showingBar;
+  autoHideSetting.classList.toggle("is-disabled", !showingBar);
   controlsThemeSetting.classList.toggle("is-disabled", !showingBar);
   controlsPositionSetting.classList.toggle("is-disabled", !showingBar);
 }

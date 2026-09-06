@@ -4,6 +4,7 @@ const DEFAULT_SETTINGS = {
   smoothScroll: true,
   scrollDuration: 250,
   floatingControls: false,
+  hideControlsOnScroll: false,
   controlsTheme: "auto",
   popupTheme: "auto"
 };
