@@ -1,5 +1,6 @@
 (() => {
   const DEFAULT_POSITION = null;
+  const MAX_GRID_PAGES = 10;
   const host = document.createElement("div");
   host.id = "nextpage-floating-controls";
   host.hidden = true;
@@ -67,7 +68,7 @@
       }
       .wrap.below .popover { top: calc(100% + 10px); bottom: auto; }
       .popover[hidden] { display: none; }
-      .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+      .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
       .grid button { min-width: 0; height: 34px; background: light-dark(rgba(255,255,255,.48), rgba(255,255,255,.07)); }
       .grid button.current { color: white; background: #4169e1; }
       form { display: grid; grid-template-columns: 1fr auto; gap: 7px; margin-top: 9px; }
@@ -226,16 +227,17 @@
   }
 
   function nearbyPages(pageModel) {
-    if (!pageModel.currentPage) return pageModel.availablePages.slice(0, 8);
-    const pages = [];
-    const first = Math.max(1, pageModel.currentPage - 3);
-    const last = Math.min(first + 7, pageModel.maximumPage ?? first + 7);
-    for (let page = first; page <= last; page += 1) {
-      if (page === pageModel.currentPage || pageModel.elementForPage(page) || pageModel.urlForPage(page)) {
-        pages.push(page);
-      }
-    }
-    return pages;
+    const pages = new Set(pageModel.availablePages);
+    if (pageModel.currentPage) pages.add(pageModel.currentPage);
+    const sorted = [...pages].sort((left, right) => left - right);
+    if (sorted.length <= MAX_GRID_PAGES) return sorted;
+
+    const currentIndex = Math.max(0, sorted.indexOf(pageModel.currentPage));
+    const firstIndex = Math.max(
+      0,
+      Math.min(currentIndex - Math.floor(MAX_GRID_PAGES / 2), sorted.length - MAX_GRID_PAGES)
+    );
+    return sorted.slice(firstIndex, firstIndex + MAX_GRID_PAGES);
   }
 
   function submitPage(event) {

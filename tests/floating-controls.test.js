@@ -31,4 +31,6 @@ test("the page bar includes dragging and direct page entry", () => {
   assert.match(controls, /Math\.min\(page, model\.maximumPage\)/);
   assert.match(controls, /updateVisibility\(Boolean\(previous \|\| next \|\| model\.availablePages\.length\)\)/);
   assert.match(controls, /remove\("floatingPosition"\)/);
+  assert.match(controls, /MAX_GRID_PAGES = 10/);
+  assert.match(controls, /grid-template-columns: repeat\(5, 1fr\)/);
 });
