@@ -23,7 +23,7 @@
         align-items: center;
         gap: 2px;
         padding: 5px;
-        border: 1px solid light-dark(rgba(255,255,255,.42), rgba(255,255,255,.11));
+        border: 1px solid light-dark(rgba(24,24,28,.18), rgba(255,255,255,.11));
         border-radius: 999px;
         background: light-dark(rgba(240,240,244,.38), rgba(30,30,34,.4));
         box-shadow: 0 12px 34px rgba(0,0,0,.16);
@@ -59,7 +59,7 @@
         bottom: calc(100% + 10px);
         width: 246px;
         padding: 12px;
-        border: 1px solid light-dark(rgba(255,255,255,.46), rgba(255,255,255,.12));
+        border: 1px solid light-dark(rgba(24,24,28,.16), rgba(255,255,255,.12));
         border-radius: 8px;
         background: light-dark(rgba(242,242,246,.58), rgba(29,29,33,.55));
         box-shadow: 0 16px 42px rgba(0,0,0,.2);

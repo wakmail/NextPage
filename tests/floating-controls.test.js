@@ -43,6 +43,7 @@ test("the page bar includes dragging and direct page entry", () => {
   assert.match(controls, /MAX_GRID_PAGES = 10/);
   assert.match(controls, /grid-template-columns: repeat\(5, 1fr\)/);
   assert.match(controls, /host\.style\.colorScheme/);
+  assert.match(controls, /light-dark\(rgba\(24,24,28,\.18\), rgba\(255,255,255,\.11\)\)/);
 });
 
 test("saved position frames use a stable position snapshot", () => {
