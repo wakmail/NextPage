@@ -35,6 +35,7 @@ function fakeLink(text, href, tagName = "A") {
 
 function rootWithCandidates(candidates) {
   return {
+    querySelector: () => null,
     querySelectorAll(selector) {
       return selector.includes("rel~") ? [] : candidates;
     }
@@ -75,9 +76,89 @@ test("an exact same site Next link remains usable", () => {
   assert.equal(findNavigationLink("next", rootWithCandidates([link])), link);
 });
 
+test("exact next text works without a named pagination container", () => {
+  const previousLocation = context.location.href;
+  context.location.href = "https://example.com/articles?page=1";
+  const link = fakeLink("Next", "https://example.com/articles?page=2");
+
+  assert.equal(findNavigationLink("next", rootWithCandidates([link])), link);
+  context.location.href = previousLocation;
+});
+
 test("a generic Next button outside pagination is refused", () => {
   const button = fakeLink("Next", "", "BUTTON");
   assert.equal(findNavigationLink("next", rootWithCandidates([button])), null);
+});
+
+test("nearby numbered links fill in a missing next control", () => {
+  const previousLocation = context.location.href;
+  context.location.href = "https://example.com/articles?page=24";
+  const next = fakeLink("25", "https://example.com/articles?page=25");
+  next.closest = selector => selector.startsWith("nav") ? {} : null;
+  const root = {
+    querySelector(selector) {
+      return selector === "[aria-current='page']" ? { textContent: "24" } : null;
+    },
+    querySelectorAll(selector) {
+      if (selector.includes('rel~="')) return [];
+      if (selector.includes("rel~='last'")) return [];
+      return [next];
+    }
+  };
+
+  assert.equal(findNavigationLink("next", root), next);
+  context.location.href = previousLocation;
+});
+
+test("a distant numbered link is not treated as the next page", () => {
+  const previousLocation = context.location.href;
+  context.location.href = "https://example.com/articles?page=1";
+  const last = fakeLink("1000", "https://example.com/articles?page=1000");
+  last.closest = selector => selector.startsWith("nav") ? {} : null;
+  const root = {
+    querySelector(selector) {
+      return selector === "[aria-current='page']" ? { textContent: "1" } : null;
+    },
+    querySelectorAll(selector) {
+      if (selector.includes('rel~="')) return [];
+      if (selector.includes("rel~='last'")) return [last];
+      return [last];
+    }
+  };
+
+  assert.equal(findNavigationLink("next", root), null);
+  context.location.href = previousLocation;
+});
+
+test("a pagination wrapper can identify an otherwise empty next link", () => {
+  const previousLocation = context.location.href;
+  context.location.href = "https://example.com/articles?page=1";
+  const next = fakeLink("", "https://example.com/articles?page=2");
+  next.closest = selector => selector.startsWith("nav") ? {} : null;
+  next.parentElement = {
+    className: "next",
+    id: "",
+    getAttribute: () => null
+  };
+
+  assert.equal(findNavigationLink("next", rootWithCandidates([next])), next);
+  context.location.href = previousLocation;
+});
+
+test("a nested icon label can identify a next link", () => {
+  const previousLocation = context.location.href;
+  context.location.href = "https://example.com/articles?page=1";
+  const next = fakeLink("", "https://example.com/articles?page=2");
+  next.querySelectorAll = () => [{
+    tagName: "SVG",
+    textContent: "",
+    getAttribute(name) {
+      return name === "aria-label" ? "Next page" : null;
+    }
+  }];
+
+  assert.equal(findNavigationLink("next", rootWithCandidates([next])), next);
+  context.location.href = previousLocation;
 });
 
 test("the visible page range does not declare the last page", () => {

@@ -48,7 +48,7 @@
       .filter(candidate => candidate.score >= MINIMUM_SCORE)
       .sort((left, right) => right.score - left.score);
 
-    return candidates[0]?.element ?? null;
+    return candidates[0]?.element ?? findNumberedNavigationLink(direction, root);
   }
 
   function scoreLink(element, direction) {
@@ -59,8 +59,22 @@
     const text = normalizedText(element.textContent);
     const label = normalizedText(element.getAttribute("aria-label"));
     const title = normalizedText(element.getAttribute("title"));
-    const identity = normalizedText(`${element.id} ${element.className}`);
-    const combined = `${text} ${label} ${title}`.trim();
+    const identity = normalizedParts(element.id, element.className);
+    const nestedLabels = [...(element.querySelectorAll?.("[aria-label], [title], svg title") ?? [])]
+      .slice(0, 8)
+      .map(node => normalizedParts(
+        node.getAttribute?.("aria-label"),
+        node.getAttribute?.("title"),
+        node.tagName === "TITLE" ? node.textContent : ""
+      ))
+      .filter(Boolean);
+    const parent = element.parentElement;
+    const parentLabel = normalizedParts(
+      parent?.getAttribute?.("aria-label"),
+      parent?.getAttribute?.("title")
+    );
+    const parentIdentity = normalizedParts(parent?.id, parent?.className);
+    const combined = [text, label, title, parentLabel, ...nestedLabels].filter(Boolean).join(" ");
     const pagePhrase = direction === "next" ? /\bnext\s+page\b/ : /\b(previous|prev)\s+page\b/;
     const inPagination = Boolean(element.closest(PAGINATION_SELECTOR));
     const googleControl = isGoogleControl(direction, [text, label, title], identity, element);
@@ -77,14 +91,27 @@
       }
     }
 
-    const identityWord = direction === "next" ? "next" : "prev";
-    if (new RegExp(`(^|[\\s_-])${identityWord}($|[\\s_-])`).test(identity)) score += 55;
+    const identityWords = direction === "next" ? ["next"] : ["prev", "previous"];
+    const identityPattern = new RegExp(`(^|[\\s_-])(?:${identityWords.join("|")})($|[\\s_-])`);
+    const identityMatch = identityPattern.test(identity) ||
+      (inPagination && identityPattern.test(parentIdentity));
+    if (identityMatch) score += inPagination ? 75 : 55;
     if (inPagination) score += 25;
     if (element.tagName === "A") score += 5;
     if (element.closest(EXCLUDED_SELECTOR)) score -= 80;
     if (buttonLike && !inPagination && !pagePhrase.test(combined) && !googleControl) return 0;
 
     return score;
+  }
+
+  function findNumberedNavigationLink(direction, root) {
+    const model = getPageModel(root);
+    if (!model.currentPage) return null;
+
+    const adjacentPage = model.currentPage + (direction === "next" ? 1 : -1);
+    if (adjacentPage < 1) return null;
+    const element = model.elementForPage(adjacentPage);
+    return element && isUsableLink(element) && !sameDocumentURL(element.href) ? element : null;
   }
 
   function getPageModel(root = document, currentHref = location.href) {
@@ -341,6 +368,10 @@
 
   function normalizedText(value) {
     return String(value ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+  }
+
+  function normalizedParts(...values) {
+    return values.map(normalizedText).filter(Boolean).join(" ");
   }
 
   function isGoogleSearch(url) {
