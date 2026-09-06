@@ -48,7 +48,7 @@ test("the page bar includes dragging and direct page entry", () => {
   assert.match(controls, /hideControlsOnScroll/);
   assert.match(controls, /nearPageTop\(position\)/);
   assert.match(controls, /atPageBottom\(position\)/);
-  assert.match(controls, /BOTTOM_REVEAL_DELAY = 600/);
+  assert.match(controls, /BOTTOM_REVEAL_DELAY = 500/);
   assert.match(controls, /scheduleBottomReveal\(\)/);
   assert.match(controls, /Date\.now\(\) < navigationRevealUntil/);
   assert.match(controls, /navigationRevealUntil = Date\.now\(\) \+ NAVIGATION_REVEAL_TIME/);

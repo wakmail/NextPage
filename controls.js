@@ -4,7 +4,7 @@
   const MAX_UNVERIFIED_PAGE = 1000000;
   const TOP_REVEAL_DISTANCE = 72;
   const BOTTOM_REVEAL_DISTANCE = 2;
-  const BOTTOM_REVEAL_DELAY = 600;
+  const BOTTOM_REVEAL_DELAY = 500;
   const NAVIGATION_REVEAL_TIME = 1800;
   const SCROLL_DIRECTION_THRESHOLD = 2;
   const host = document.createElement("div");
