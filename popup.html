@@ -66,9 +66,12 @@
         <div class="range-field">
           <div class="range-heading">
             <label for="scroll-duration">Animation duration</label>
-            <output id="scroll-duration-value" for="scroll-duration"></output>
+            <div class="range-value">
+              <output id="scroll-duration-value" for="scroll-duration"></output>
+              <button id="reset-duration" class="reset-button" type="button">Reset</button>
+            </div>
           </div>
-          <input id="scroll-duration" type="range" min="50" max="4000" step="50">
+          <input id="scroll-duration" type="range" min="0" max="4000" step="50">
           <div class="range-ends" aria-hidden="true">
             <span>Fast</span>
             <span>Slow</span>

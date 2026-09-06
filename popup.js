@@ -10,6 +10,7 @@ const rememberPositions = document.querySelector("#remember-positions");
 const smoothScroll = document.querySelector("#smooth-scroll");
 const scrollDuration = document.querySelector("#scroll-duration");
 const scrollDurationValue = document.querySelector("#scroll-duration-value");
+const resetDuration = document.querySelector("#reset-duration");
 const status = document.querySelector("#status");
 
 initialize();
@@ -36,6 +37,7 @@ async function initialize() {
   });
   scrollDuration.addEventListener("input", updateDurationDisplay);
   scrollDuration.addEventListener("change", saveSettings);
+  resetDuration.addEventListener("click", resetScrollDuration);
 
   document.querySelector("#shortcut-settings").addEventListener("click", () => {
     chrome.tabs.create({ url: "chrome://extensions/shortcuts" });
@@ -66,9 +68,21 @@ async function saveSettings() {
 
 function updateDurationDisplay() {
   scrollDuration.disabled = !smoothScroll.checked;
-  scrollDurationValue.textContent = smoothScroll.checked
-    ? `${(Number(scrollDuration.value) / 1000).toFixed(2)} s`
-    : "Off";
+  resetDuration.disabled = !smoothScroll.checked;
+
+  if (!smoothScroll.checked) {
+    scrollDurationValue.textContent = "Off";
+  } else if (Number(scrollDuration.value) === 0) {
+    scrollDurationValue.textContent = "Instant";
+  } else {
+    scrollDurationValue.textContent = `${(Number(scrollDuration.value) / 1000).toFixed(2)} s`;
+  }
+}
+
+function resetScrollDuration() {
+  scrollDuration.value = DEFAULT_SETTINGS.scrollDuration;
+  updateDurationDisplay();
+  saveSettings();
 }
 
 function setStatus(message, isError = false) {

@@ -189,6 +189,33 @@ select {
   font-variant-numeric: tabular-nums;
 }
 
+.range-value {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.reset-button {
+  padding: 2px 6px;
+  border: 1px solid #deded9;
+  border-radius: 6px;
+  color: #666660;
+  background: #fafaf8;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.reset-button:hover {
+  border-color: #b9b9b2;
+  color: #292926;
+}
+
+.reset-button:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
 .range-field input {
   width: 100%;
   margin: 10px 0 2px;

@@ -8,7 +8,7 @@ const contentScript = fs.readFileSync(
   "utf8"
 );
 
-test("smooth scrolling follows a growing page bottom", async () => {
+function createHarness(scrollDuration) {
   let frameCallback;
   let currentTop = 500;
   const positions = [];
@@ -34,7 +34,7 @@ test("smooth scrolling follows a growing page bottom", async () => {
       storage: {
         local: {
           get: async () => ({
-            settings: { smoothScroll: true, scrollDuration: 1000 }
+            settings: { smoothScroll: true, scrollDuration }
           })
         }
       }
@@ -64,10 +64,22 @@ test("smooth scrolling follows a growing page bottom", async () => {
 
   vm.createContext(context);
   vm.runInContext(contentScript, context);
+
+  return {
+    context,
+    getFrameCallback: () => frameCallback,
+    positions,
+    scroller
+  };
+}
+
+test("smooth scrolling follows a growing page bottom", async () => {
+  const { context, getFrameCallback, positions, scroller } = createHarness(1000);
   context.scrollToPosition(0, () => scroller.scrollHeight);
   await Promise.resolve();
   await Promise.resolve();
 
+  const frameCallback = getFrameCallback();
   frameCallback(0);
   frameCallback(250);
   scroller.scrollHeight = 2500;
@@ -79,4 +91,14 @@ test("smooth scrolling follows a growing page bottom", async () => {
   assert.ok(positions[1] < positions[2]);
   assert.ok(positions[2] < positions[3]);
   assert.ok(positions[3] < positions[4]);
+});
+
+test("zero duration scrolls instantly", async () => {
+  const { context, getFrameCallback, positions, scroller } = createHarness(0);
+  context.scrollToPosition(0, () => scroller.scrollHeight);
+  await Promise.resolve();
+  await Promise.resolve();
+
+  assert.equal(positions.at(-1), 1500);
+  assert.equal(getFrameCallback(), undefined);
 });
