@@ -27,4 +27,8 @@ test("the page bar includes dragging and direct page entry", () => {
   assert.match(controls, /id="page-grid"/);
   assert.match(controls, /id="page-input"/);
   assert.match(controls, /floatingPosition/);
+  assert.match(controls, /addEventListener\("dblclick", resetPosition\)/);
+  assert.match(controls, /Math\.min\(page, model\.maximumPage\)/);
+  assert.match(controls, /updateVisibility\(Boolean\(previous \|\| next \|\| model\.availablePages\.length\)\)/);
+  assert.match(controls, /remove\("floatingPosition"\)/);
 });

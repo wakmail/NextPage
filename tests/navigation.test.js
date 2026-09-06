@@ -16,7 +16,7 @@ const context = {
 vm.createContext(context);
 vm.runInContext(navigationScript, context);
 
-const { findNavigationLink, inferPageURL } = context.NextPageNavigation;
+const { findNavigationLink, getPageModel, inferPageURL } = context.NextPageNavigation;
 
 function fakeLink(text, href, tagName = "A") {
   return {
@@ -78,4 +78,18 @@ test("an exact same site Next link remains usable", () => {
 test("a generic Next button outside pagination is refused", () => {
   const button = fakeLink("Next", "", "BUTTON");
   assert.equal(findNavigationLink("next", rootWithCandidates([button])), null);
+});
+
+test("the visible page range sets the verified maximum", () => {
+  const lastVisible = fakeLink("99", "https://www.google.com/search?q=nextpage&start=980");
+  const root = {
+    querySelector(selector) {
+      return selector === "[aria-current='page']" ? { textContent: "1" } : null;
+    },
+    querySelectorAll(selector) {
+      return selector.includes("last page") ? [] : [lastVisible];
+    }
+  };
+  const model = getPageModel(root, "https://www.google.com/search?q=nextpage");
+  assert.equal(model.maximumPage, 99);
 });

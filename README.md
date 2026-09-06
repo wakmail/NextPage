@@ -13,6 +13,9 @@ NextPage is a Chrome extension for moving through paginated websites and control
 7. Show an optional movable glass page bar with safe Previous and Next actions.
 8. Open a nearby page grid or type a page number directly when the site exposes a reliable page pattern.
 9. Reset the floating bar to the bottom center from the extension popup.
+10. Double click the bar grip to reset its position without opening the popup.
+11. Hide the bar when a website has no reliable page controls.
+12. Limit typed jumps to the highest page currently verified by the website, allowing the range to expand as later pages reveal more links.
 
 ## Install locally
 

@@ -11,9 +11,23 @@
     "[class*='pagination']",
     "[class*='pager']"
   ];
+  const PAGE_CONTAINER_SELECTORS = [
+    "nav[aria-label*='page' i]",
+    "[role='navigation'][aria-label*='page' i]",
+    "[aria-label*='pagination' i]",
+    ".pagination",
+    "[class*='pagination']",
+    "[class*='pager']"
+  ];
   const PAGINATION_SELECTOR = PAGINATION_SELECTORS.join(", ");
-  const PAGINATION_LINK_SELECTOR = PAGINATION_SELECTORS
+  const PAGINATION_LINK_SELECTOR = PAGE_CONTAINER_SELECTORS
     .map(selector => `${selector} a[href]`)
+    .join(", ");
+  const LAST_PAGE_SELECTOR = ["a[rel~='last']", "link[rel~='last']", ...PAGE_CONTAINER_SELECTORS
+    .flatMap(selector => [
+      `${selector} a[aria-label*='last page' i]`,
+      `${selector} a[title*='last page' i]`
+    ])]
     .join(", ");
   const EXCLUDED_SELECTOR = "header, [role='banner'], [role='menu'], [role='menubar'], [class*='carousel'], [class*='slider']";
   const MINIMUM_SCORE = 100;
@@ -76,6 +90,12 @@
       if (page && isSameSiteURL(element.href, currentHref)) pageLinks.set(page, element);
     }
 
+    for (const element of root.querySelectorAll(LAST_PAGE_SELECTOR)) {
+      if (!isSameSiteURL(element.href, currentHref)) continue;
+      const page = pageNumberFromText(element.textContent) || currentPageFromURL(element.href, true);
+      if (page) pageLinks.set(page, element);
+    }
+
     let currentPage = currentPageFromDocument(root);
     if (!currentPage) currentPage = currentPageFromURL(currentHref, pageLinks.size > 0);
     if (!currentPage) {
@@ -87,10 +107,13 @@
       }
     }
 
+    const availablePages = [...pageLinks.keys()].sort((left, right) => left - right);
+    const maximumPage = Math.max(currentPage ?? 0, ...availablePages) || null;
     const entries = [...pageLinks].map(([page, element]) => ({ page, href: element.href }));
     return {
       currentPage,
-      availablePages: [...pageLinks.keys()].sort((left, right) => left - right),
+      availablePages,
+      maximumPage,
       elementForPage: page => pageLinks.get(page) ?? null,
       urlForPage: page => inferPageURL(page, currentHref, entries, currentPage)
     };
@@ -98,7 +121,7 @@
 
   function currentPageFromDocument(root) {
     const selectors = ["[aria-current='page']"];
-    for (const container of PAGINATION_SELECTORS) {
+    for (const container of PAGE_CONTAINER_SELECTORS) {
       selectors.push(
         `${container} .current`,
         `${container} .active`,

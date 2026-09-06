@@ -21,10 +21,10 @@
         align-items: center;
         gap: 2px;
         padding: 5px;
-        border: 1px solid light-dark(rgba(255,255,255,.78), rgba(255,255,255,.18));
+        border: 1px solid light-dark(rgba(255,255,255,.42), rgba(255,255,255,.11));
         border-radius: 999px;
-        background: light-dark(rgba(240,240,244,.62), rgba(30,30,34,.58));
-        box-shadow: 0 12px 34px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.5);
+        background: light-dark(rgba(240,240,244,.38), rgba(30,30,34,.4));
+        box-shadow: 0 12px 34px rgba(0,0,0,.16);
         backdrop-filter: blur(18px) saturate(165%);
         -webkit-backdrop-filter: blur(18px) saturate(165%);
       }
@@ -57,10 +57,10 @@
         bottom: calc(100% + 10px);
         width: 246px;
         padding: 12px;
-        border: 1px solid light-dark(rgba(255,255,255,.8), rgba(255,255,255,.18));
+        border: 1px solid light-dark(rgba(255,255,255,.46), rgba(255,255,255,.12));
         border-radius: 20px;
-        background: light-dark(rgba(242,242,246,.78), rgba(29,29,33,.76));
-        box-shadow: 0 16px 42px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.5);
+        background: light-dark(rgba(242,242,246,.58), rgba(29,29,33,.55));
+        box-shadow: 0 16px 42px rgba(0,0,0,.2);
         backdrop-filter: blur(22px) saturate(165%);
         -webkit-backdrop-filter: blur(22px) saturate(165%);
         transform: translateX(-50%);
@@ -96,7 +96,7 @@
         <button id="previous" type="button" aria-label="Previous page" title="Previous page">‹</button>
         <button class="page" id="page" type="button" aria-expanded="false" aria-controls="page-popover">Page ?</button>
         <button id="next" type="button" aria-label="Next page" title="Next page">›</button>
-        <button class="move" id="move" type="button" aria-label="Move controls" title="Move controls">⠿</button>
+        <button class="move" id="move" type="button" aria-label="Move controls" title="Move controls. Double click to reset">⠿</button>
       </div>
     </div>
   `;
@@ -115,6 +115,7 @@
   let model;
   let storedPosition = DEFAULT_POSITION;
   let refreshTimer;
+  let controlsEnabled = false;
 
   initialize();
 
@@ -122,8 +123,7 @@
     document.documentElement.append(host);
     const stored = await chrome.storage.local.get(["settings", "floatingPosition"]);
     storedPosition = stored.floatingPosition ?? DEFAULT_POSITION;
-    setVisible(Boolean(stored.settings?.floatingControls));
-    applyStoredPosition();
+    setEnabled(Boolean(stored.settings?.floatingControls));
     refresh();
 
     previousButton.addEventListener("click", () => runDirection("previous-page"));
@@ -131,14 +131,15 @@
     pageButton.addEventListener("click", togglePopover);
     pageForm.addEventListener("submit", submitPage);
     moveButton.addEventListener("pointerdown", startDrag);
+    moveButton.addEventListener("dblclick", resetPosition);
     document.addEventListener("pointerdown", closeFromPageClick, true);
     window.addEventListener("resize", applyStoredPosition, { passive: true });
 
     chrome.storage.onChanged.addListener(changes => {
-      if (changes.settings) setVisible(Boolean(changes.settings.newValue?.floatingControls));
+      if (changes.settings) setEnabled(Boolean(changes.settings.newValue?.floatingControls));
       if (changes.floatingPosition) {
         storedPosition = changes.floatingPosition.newValue ?? DEFAULT_POSITION;
-        applyStoredPosition();
+        if (!host.hidden) applyStoredPosition();
       }
     });
 
@@ -148,16 +149,25 @@
     });
   }
 
-  function setVisible(visible) {
+  function setEnabled(enabled) {
+    controlsEnabled = enabled;
+    if (!enabled) updateVisibility(false);
+    else scheduleRefresh();
+  }
+
+  function updateVisibility(hasPages) {
+    const visible = controlsEnabled && hasPages;
+    const becomingVisible = visible && host.hidden;
     host.hidden = !visible;
     host.style.display = visible ? "block" : "none";
-    if (visible) scheduleRefresh();
+    if (becomingVisible) applyStoredPosition();
   }
 
   function refresh() {
     model = NextPageNavigation.getPageModel();
     const previous = NextPageNavigation.findNavigationLink("previous");
     const next = NextPageNavigation.findNavigationLink("next");
+    updateVisibility(Boolean(previous || next || model.availablePages.length));
     previousButton.disabled = !previous;
     nextButton.disabled = !next;
     pageButton.textContent = model.currentPage ? `Page ${model.currentPage}` : "Page ?";
@@ -166,7 +176,7 @@
   }
 
   function scheduleRefresh() {
-    if (host.hidden) return;
+    if (!controlsEnabled) return;
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(refresh, 350);
   }
@@ -219,7 +229,8 @@
     if (!pageModel.currentPage) return pageModel.availablePages.slice(0, 8);
     const pages = [];
     const first = Math.max(1, pageModel.currentPage - 3);
-    for (let page = first; page < first + 8; page += 1) {
+    const last = Math.min(first + 7, pageModel.maximumPage ?? first + 7);
+    for (let page = first; page <= last; page += 1) {
       if (page === pageModel.currentPage || pageModel.elementForPage(page) || pageModel.urlForPage(page)) {
         pages.push(page);
       }
@@ -237,13 +248,18 @@
       showMessage("Enter a valid page number");
       return;
     }
-    if (page === model.currentPage) {
+    const safePage = model.maximumPage ? Math.min(page, model.maximumPage) : null;
+    if (!safePage) {
+      showMessage("No page range is available yet");
+      return;
+    }
+    if (safePage === model.currentPage) {
       closePopover();
       return;
     }
 
-    const element = model.elementForPage(page);
-    const url = element?.href || model.urlForPage(page);
+    const element = model.elementForPage(safePage);
+    const url = element?.href || model.urlForPage(safePage);
     if (!url) {
       showMessage("This page cannot be determined safely");
       return;
@@ -303,6 +319,13 @@
       y: Math.max(0, Math.min(1, rect.top / verticalSpace))
     };
     chrome.storage.local.set({ floatingPosition: storedPosition });
+  }
+
+  async function resetPosition(event) {
+    event?.preventDefault();
+    storedPosition = DEFAULT_POSITION;
+    await chrome.storage.local.remove("floatingPosition");
+    applyStoredPosition();
   }
 
   function applyStoredPosition() {
