@@ -1,6 +1,7 @@
 (() => {
   const DEFAULT_POSITION = null;
   const MAX_GRID_PAGES = 10;
+  const MAX_UNVERIFIED_PAGE = 1000000;
   const host = document.createElement("div");
   host.id = "nextpage-floating-controls";
   host.hidden = true;
@@ -250,11 +251,11 @@
       showMessage("Enter a valid page number");
       return;
     }
-    const safePage = model.maximumPage ? Math.min(page, model.maximumPage) : null;
-    if (!safePage) {
-      showMessage("No page range is available yet");
+    if (!model.lastPage && page > MAX_UNVERIFIED_PAGE) {
+      showMessage("That page number is too large to verify safely");
       return;
     }
+    const safePage = model.lastPage ? Math.min(page, model.lastPage) : page;
     if (safePage === model.currentPage) {
       closePopover();
       return;

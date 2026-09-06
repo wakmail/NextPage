@@ -89,6 +89,7 @@
 
   function getPageModel(root = document, currentHref = location.href) {
     const pageLinks = new Map();
+    let lastPage = null;
     const elements = root.querySelectorAll(`${PAGINATION_LINK_SELECTOR}, a[aria-current='page'][href]`);
 
     for (const element of elements) {
@@ -99,7 +100,10 @@
     for (const element of root.querySelectorAll(LAST_PAGE_SELECTOR)) {
       if (!isSameSiteURL(element.href, currentHref)) continue;
       const page = pageNumberFromText(element.textContent) || currentPageFromURL(element.href, true);
-      if (page) pageLinks.set(page, element);
+      if (page) {
+        pageLinks.set(page, element);
+        lastPage = Math.max(lastPage ?? 0, page);
+      }
     }
 
     addGooglePageLinks(pageLinks, root, currentHref);
@@ -116,12 +120,13 @@
     }
 
     const availablePages = [...pageLinks.keys()].sort((left, right) => left - right);
-    const maximumPage = Math.max(currentPage ?? 0, ...availablePages) || null;
+    const highestKnownPage = Math.max(currentPage ?? 0, ...availablePages) || null;
     const entries = [...pageLinks].map(([page, element]) => ({ page, href: element.href }));
     return {
       currentPage,
       availablePages,
-      maximumPage,
+      highestKnownPage,
+      lastPage,
       elementForPage: page => pageLinks.get(page) ?? null,
       urlForPage: page => inferPageURL(page, currentHref, entries, currentPage)
     };

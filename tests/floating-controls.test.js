@@ -28,7 +28,8 @@ test("the page bar includes dragging and direct page entry", () => {
   assert.match(controls, /id="page-input"/);
   assert.match(controls, /floatingPosition/);
   assert.match(controls, /addEventListener\("dblclick", resetPosition\)/);
-  assert.match(controls, /Math\.min\(page, model\.maximumPage\)/);
+  assert.match(controls, /Math\.min\(page, model\.lastPage\)/);
+  assert.match(controls, /MAX_UNVERIFIED_PAGE = 1000000/);
   assert.match(controls, /updateVisibility\(Boolean\(previous \|\| next \|\| model\.availablePages\.length\)\)/);
   assert.match(controls, /remove\("floatingPosition"\)/);
   assert.match(controls, /MAX_GRID_PAGES = 10/);

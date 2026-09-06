@@ -80,7 +80,7 @@ test("a generic Next button outside pagination is refused", () => {
   assert.equal(findNavigationLink("next", rootWithCandidates([button])), null);
 });
 
-test("the visible page range sets the verified maximum", () => {
+test("the visible page range does not declare the last page", () => {
   const lastVisible = fakeLink("99", "https://www.google.com/search?q=nextpage&start=980");
   const root = {
     querySelector(selector) {
@@ -91,7 +91,8 @@ test("the visible page range sets the verified maximum", () => {
     }
   };
   const model = getPageModel(root, "https://www.google.com/search?q=nextpage");
-  assert.equal(model.maximumPage, 99);
+  assert.equal(model.highestKnownPage, 99);
+  assert.equal(model.lastPage, null);
 });
 
 test("Google offset links are detected without visible text", () => {
@@ -115,10 +116,24 @@ test("Google offset links populate the page model", () => {
   const model = getPageModel(root, "https://www.google.com/search?q=nextpage");
   assert.equal(model.currentPage, 1);
   assert.deepEqual([...model.availablePages], [2]);
-  assert.equal(model.maximumPage, 2);
+  assert.equal(model.highestKnownPage, 2);
+  assert.equal(model.lastPage, null);
 });
 
 test("Google More results buttons remain usable", () => {
   const button = fakeLink("More results", "", "BUTTON");
   assert.equal(findNavigationLink("next", rootWithCandidates([button])), button);
+});
+
+test("an explicit Last link declares the final page", () => {
+  const last = fakeLink("Last", "https://example.com/articles?page=1000");
+  const root = {
+    querySelector: () => null,
+    querySelectorAll(selector) {
+      return selector.includes("rel~='last'") ? [last] : [];
+    }
+  };
+  const model = getPageModel(root, "https://example.com/articles?page=1");
+  assert.equal(model.highestKnownPage, 1000);
+  assert.equal(model.lastPage, 1000);
 });
