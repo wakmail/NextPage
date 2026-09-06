@@ -129,6 +129,7 @@
   let positionFrameId = 0;
   let controlsEnabled = false;
   let hideControlsOnScroll = false;
+  let revealControlsAtBottom = true;
   let dragging = false;
   let lastScrollPosition = currentScrollPosition();
   let navigationRevealUntil = Date.now() + NAVIGATION_REVEAL_TIME;
@@ -141,6 +142,7 @@
     storedPosition = stored.floatingPosition ?? DEFAULT_POSITION;
     applyTheme(stored.settings?.controlsTheme);
     setAutoHide(Boolean(stored.settings?.hideControlsOnScroll));
+    setBottomReveal(stored.settings?.revealControlsAtBottom !== false);
     setEnabled(Boolean(stored.settings?.floatingControls));
     refresh();
 
@@ -158,6 +160,7 @@
       if (changes.settings) {
         setEnabled(Boolean(changes.settings.newValue?.floatingControls));
         setAutoHide(Boolean(changes.settings.newValue?.hideControlsOnScroll));
+        setBottomReveal(changes.settings.newValue?.revealControlsAtBottom !== false);
         applyTheme(changes.settings.newValue?.controlsTheme);
       }
       if (changes.floatingPosition) {
@@ -189,6 +192,11 @@
     setAutoHidden(false);
   }
 
+  function setBottomReveal(enabled) {
+    revealControlsAtBottom = enabled;
+    if (!enabled) cancelBottomReveal();
+  }
+
   function handlePageScroll() {
     const position = currentScrollPosition();
     const movement = position - lastScrollPosition;
@@ -203,7 +211,7 @@
       setAutoHidden(false);
       return;
     }
-    if (atPageBottom(position)) {
+    if (revealControlsAtBottom && atPageBottom(position)) {
       scheduleBottomReveal();
       return;
     }

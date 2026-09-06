@@ -5,6 +5,7 @@ const DEFAULT_SETTINGS = {
   scrollDuration: 250,
   floatingControls: false,
   hideControlsOnScroll: false,
+  revealControlsAtBottom: true,
   controlsTheme: "auto",
   popupTheme: "auto"
 };

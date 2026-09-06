@@ -21,6 +21,7 @@ test("navigation loads before the page controls", () => {
 test("the popup offers visibility and position controls", () => {
   assert.match(popup, /id="floating-controls"/);
   assert.match(popup, /id="hide-controls-on-scroll"/);
+  assert.match(popup, /id="reveal-controls-at-bottom"/);
   assert.match(popup, /id="reset-floating-position"/);
   assert.match(popup, /id="controls-theme"/);
   assert.match(popup, /id="remember-setting"/);
@@ -46,6 +47,7 @@ test("the page bar includes dragging and direct page entry", () => {
   assert.match(controls, /host\.style\.colorScheme/);
   assert.match(controls, /light-dark\(rgba\(24,24,28,\.1\), rgba\(255,255,255,\.11\)\)/);
   assert.match(controls, /hideControlsOnScroll/);
+  assert.match(controls, /revealControlsAtBottom/);
   assert.match(controls, /nearPageTop\(position\)/);
   assert.match(controls, /atPageBottom\(position\)/);
   assert.match(controls, /BOTTOM_REVEAL_DELAY = 500/);

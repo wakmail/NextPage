@@ -5,6 +5,7 @@ const DEFAULT_SETTINGS = {
   scrollDuration: 250,
   floatingControls: false,
   hideControlsOnScroll: false,
+  revealControlsAtBottom: true,
   controlsTheme: "auto",
   popupTheme: "auto"
 };
@@ -21,6 +22,8 @@ const durationSetting = document.querySelector("#duration-setting");
 const floatingControls = document.querySelector("#floating-controls");
 const hideControlsOnScroll = document.querySelector("#hide-controls-on-scroll");
 const autoHideSetting = document.querySelector("#auto-hide-setting");
+const revealControlsAtBottom = document.querySelector("#reveal-controls-at-bottom");
+const bottomRevealSetting = document.querySelector("#bottom-reveal-setting");
 const controlsTheme = document.querySelector("#controls-theme");
 const controlsThemeSetting = document.querySelector("#controls-theme-setting");
 const resetFloatingPosition = document.querySelector("#reset-floating-position");
@@ -40,6 +43,7 @@ async function initialize() {
   scrollDuration.value = merged.scrollDuration;
   floatingControls.checked = merged.floatingControls;
   hideControlsOnScroll.checked = merged.hideControlsOnScroll;
+  revealControlsAtBottom.checked = merged.revealControlsAtBottom;
   controlsTheme.value = merged.controlsTheme;
   popupTheme.value = merged.popupTheme;
   applyPopupTheme();
@@ -68,7 +72,11 @@ async function initialize() {
     updateRelevance();
     saveSettings();
   });
-  hideControlsOnScroll.addEventListener("change", saveSettings);
+  hideControlsOnScroll.addEventListener("change", () => {
+    updateRelevance();
+    saveSettings();
+  });
+  revealControlsAtBottom.addEventListener("change", saveSettings);
   controlsTheme.addEventListener("change", saveSettings);
   popupTheme.addEventListener("change", () => {
     applyPopupTheme();
@@ -100,6 +108,7 @@ async function saveSettings() {
       scrollDuration: Number(scrollDuration.value),
       floatingControls: floatingControls.checked,
       hideControlsOnScroll: hideControlsOnScroll.checked,
+      revealControlsAtBottom: revealControlsAtBottom.checked,
       controlsTheme: controlsTheme.value,
       popupTheme: popupTheme.value
     }
@@ -128,9 +137,12 @@ function updateRelevance() {
 
   const showingBar = floatingControls.checked;
   hideControlsOnScroll.disabled = !showingBar;
+  const hidingOnScroll = showingBar && hideControlsOnScroll.checked;
+  revealControlsAtBottom.disabled = !hidingOnScroll;
   controlsTheme.disabled = !showingBar;
   resetFloatingPosition.disabled = !showingBar;
   autoHideSetting.classList.toggle("is-disabled", !showingBar);
+  bottomRevealSetting.classList.toggle("is-disabled", !hidingOnScroll);
   controlsThemeSetting.classList.toggle("is-disabled", !showingBar);
   controlsPositionSetting.classList.toggle("is-disabled", !showingBar);
 }
