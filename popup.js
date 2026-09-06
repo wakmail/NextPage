@@ -9,13 +9,17 @@ const DEFAULT_SETTINGS = {
 
 const arrivalBehavior = document.querySelector("#arrival-behavior");
 const rememberPositions = document.querySelector("#remember-positions");
+const rememberSetting = document.querySelector("#remember-setting");
 const smoothScroll = document.querySelector("#smooth-scroll");
 const scrollDuration = document.querySelector("#scroll-duration");
 const scrollDurationValue = document.querySelector("#scroll-duration-value");
 const resetDuration = document.querySelector("#reset-duration");
+const durationSetting = document.querySelector("#duration-setting");
 const floatingControls = document.querySelector("#floating-controls");
 const controlsTheme = document.querySelector("#controls-theme");
+const controlsThemeSetting = document.querySelector("#controls-theme-setting");
 const resetFloatingPosition = document.querySelector("#reset-floating-position");
+const controlsPositionSetting = document.querySelector("#controls-position-setting");
 const status = document.querySelector("#status");
 
 initialize();
@@ -31,12 +35,16 @@ async function initialize() {
   floatingControls.checked = merged.floatingControls;
   controlsTheme.value = merged.controlsTheme;
   updateDurationDisplay();
+  updateRelevance();
 
   document.querySelectorAll("[data-action]").forEach(button => {
     button.addEventListener("click", () => runAction(button.dataset.action));
   });
 
-  arrivalBehavior.addEventListener("change", saveSettings);
+  arrivalBehavior.addEventListener("change", () => {
+    updateRelevance();
+    saveSettings();
+  });
   rememberPositions.addEventListener("change", saveSettings);
   smoothScroll.addEventListener("change", () => {
     updateDurationDisplay();
@@ -45,7 +53,10 @@ async function initialize() {
   scrollDuration.addEventListener("input", updateDurationDisplay);
   scrollDuration.addEventListener("change", saveSettings);
   resetDuration.addEventListener("click", resetScrollDuration);
-  floatingControls.addEventListener("change", saveSettings);
+  floatingControls.addEventListener("change", () => {
+    updateRelevance();
+    saveSettings();
+  });
   controlsTheme.addEventListener("change", saveSettings);
   resetFloatingPosition.addEventListener("click", resetControlsPosition);
 
@@ -81,6 +92,7 @@ async function saveSettings() {
 function updateDurationDisplay() {
   scrollDuration.disabled = !smoothScroll.checked;
   resetDuration.disabled = !smoothScroll.checked;
+  durationSetting.classList.toggle("is-disabled", !smoothScroll.checked);
 
   if (!smoothScroll.checked) {
     scrollDurationValue.textContent = "Off";
@@ -89,6 +101,18 @@ function updateDurationDisplay() {
   } else {
     scrollDurationValue.textContent = `${(Number(scrollDuration.value) / 1000).toFixed(2)} s`;
   }
+}
+
+function updateRelevance() {
+  const restoringPosition = arrivalBehavior.value === "restore";
+  rememberPositions.disabled = !restoringPosition;
+  rememberSetting.classList.toggle("is-disabled", !restoringPosition);
+
+  const showingBar = floatingControls.checked;
+  controlsTheme.disabled = !showingBar;
+  resetFloatingPosition.disabled = !showingBar;
+  controlsThemeSetting.classList.toggle("is-disabled", !showingBar);
+  controlsPositionSetting.classList.toggle("is-disabled", !showingBar);
 }
 
 function resetScrollDuration() {

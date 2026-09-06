@@ -94,12 +94,12 @@ async function applyPendingArrivalBehavior() {
     if (!response?.behavior || response.behavior === "leave") return;
 
     if (response.behavior === "top") {
-      whenPageLoaded(() => scrollToPosition(0, 0));
+      repeatScroll(0, 0);
       return;
     }
 
     if (response.behavior === "bottom") {
-      whenPageLoaded(() => scrollToPosition(0, () => pageScroller().scrollHeight));
+      repeatScroll(0, () => pageScroller().scrollHeight);
       return;
     }
 
@@ -109,7 +109,7 @@ async function applyPendingArrivalBehavior() {
         url: location.href
       });
       const position = saved?.position;
-      whenPageLoaded(() => repeatScroll(position?.x ?? 0, position?.y ?? 0));
+      repeatScroll(position?.x ?? 0, position?.y ?? 0);
     }
   } catch {
     // Arrival behavior is optional when the extension is reloading.
@@ -117,12 +117,20 @@ async function applyPendingArrivalBehavior() {
 }
 
 function repeatScroll(x, y) {
-  [0, 120, 500].forEach(delay => {
+  const repeatId = ++scrollAnimationId;
+
+  function apply() {
+    if (repeatId !== scrollAnimationId) return;
+    const resolvedY = typeof y === "function" ? y() : y;
+    const scroller = pageScroller();
+    scroller.scrollLeft = x;
+    scroller.scrollTop = resolvedY;
+  }
+
+  apply();
+  [120, 500, 1500].forEach(delay => {
     setTimeout(() => {
-      const resolvedY = typeof y === "function" ? y() : y;
-      const scroller = pageScroller();
-      scroller.scrollLeft = x;
-      scroller.scrollTop = resolvedY;
+      apply();
     }, delay);
   });
 }
@@ -186,26 +194,6 @@ function settleScrollTarget(scroller, targetX, resolveTargetY, animationId) {
 
 function cancelScrollAnimation() {
   scrollAnimationId += 1;
-}
-
-function whenPageLoaded(callback) {
-  let fallbackTimer;
-  let finished = false;
-
-  function run() {
-    if (finished) return;
-    finished = true;
-    clearTimeout(fallbackTimer);
-    setTimeout(callback, 100);
-  }
-
-  if (document.readyState === "complete") {
-    run();
-    return;
-  }
-
-  window.addEventListener("load", run, { once: true });
-  fallbackTimer = setTimeout(run, 5000);
 }
 
 function pageScroller() {

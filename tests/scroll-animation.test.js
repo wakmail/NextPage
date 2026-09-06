@@ -8,7 +8,7 @@ const contentScript = fs.readFileSync(
   "utf8"
 );
 
-function createHarness(scrollDuration) {
+function createHarness(scrollDuration, arrivalBehavior = null) {
   let frameCallback;
   let currentTop = 500;
   const positions = [];
@@ -29,7 +29,9 @@ function createHarness(scrollDuration) {
     chrome: {
       runtime: {
         onMessage: { addListener() {} },
-        sendMessage: async () => ({ behavior: null })
+        sendMessage: async message => message.type === "consume-arrival"
+          ? { behavior: arrivalBehavior }
+          : { ok: true }
       },
       storage: {
         local: {
@@ -100,5 +102,13 @@ test("zero duration scrolls instantly", async () => {
   await Promise.resolve();
 
   assert.equal(positions.at(-1), 1500);
+  assert.equal(getFrameCallback(), undefined);
+});
+
+test("navigation arrival moves immediately without animation frames", async () => {
+  const { context, getFrameCallback, positions } = createHarness(250, "top");
+  await context.applyPendingArrivalBehavior();
+
+  assert.equal(positions.at(-1), 0);
   assert.equal(getFrameCallback(), undefined);
 });

@@ -47,7 +47,7 @@
           </select>
         </label>
 
-        <label class="toggle">
+        <label class="toggle" id="remember-setting">
           <span>
             <strong>Remember positions</strong>
             <small>Save your place on recently visited pages</small>
@@ -58,12 +58,12 @@
         <label class="toggle">
           <span>
             <strong>Smooth scrolling</strong>
-            <small>Animate top and bottom actions</small>
+            <small>Animate keyboard and popup scroll actions</small>
           </span>
           <input id="smooth-scroll" type="checkbox">
         </label>
 
-        <div class="range-field">
+        <div class="range-field" id="duration-setting">
           <div class="range-heading">
             <label for="scroll-duration">Animation duration</label>
             <div class="range-value">
@@ -88,7 +88,7 @@
           </span>
           <input id="floating-controls" type="checkbox">
         </label>
-        <label class="field controls-theme-field">
+        <label class="field controls-theme-field" id="controls-theme-setting">
           <span>Bar appearance</span>
           <select id="controls-theme">
             <option value="auto">Auto</option>
@@ -96,7 +96,7 @@
             <option value="dark">Dark</option>
           </select>
         </label>
-        <div class="position-row">
+        <div class="position-row" id="controls-position-setting">
           <span>
             <strong>Bar position</strong>
             <small>Return the bar to the bottom center</small>
